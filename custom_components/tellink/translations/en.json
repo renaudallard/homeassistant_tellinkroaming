@@ -1,0 +1,34 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Tellink Prepaid",
+        "description": "Enter your Tellink Prepaid account credentials.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid username or password",
+      "cannot_connect": "Cannot connect to Tellink server",
+      "unknown": "An unexpected error occurred. Check the logs for details."
+    },
+    "abort": {
+      "already_configured": "This Tellink account is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Tellink Update Settings",
+        "description": "Configure how often Tellink data should be refreshed.",
+        "data": {
+          "scan_interval": "Regular update interval (seconds)",
+          "retry_interval": "Retry interval after failure (seconds)"
+        }
+      }
+    }
+  }
+}

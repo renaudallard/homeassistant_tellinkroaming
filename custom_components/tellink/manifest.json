@@ -1,0 +1,20 @@
+{
+  "domain": "tellink",
+  "name": "Tellink Prepaid",
+  "version": "1.1.0",
+  "documentation": "https://www.mytellink.com/prepaid",
+  "issue_tracker": "https://github.com/renaudallard/tellinkroaming_ha/issues",
+  "requirements": [
+    "aiohttp>=3.9.0",
+    "websockets>=12.0"
+  ],
+  "codeowners": ["@renaudallard"],
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "config_flow": true,
+  "loggers": ["custom_components.tellink"],
+  "branding": {
+    "logo": "tellink_logo256.svg",
+    "icon": "tellink_logo64.svg"
+  }
+}

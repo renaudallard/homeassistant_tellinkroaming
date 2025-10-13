@@ -1,0 +1,6 @@
+{
+  "name": "Tellink Prepaid",
+  "render_readme": true,
+  "domains": ["tellink"],
+  "country": "","zip_regex": ""
+}

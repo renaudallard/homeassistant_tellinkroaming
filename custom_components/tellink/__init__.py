@@ -1,4 +1,4 @@
-"""Initialize the Tellink prepaid integration."""
+"""Initialize the Tellink Prepaid integration (HA 2025+, safe credential handling)."""
 from __future__ import annotations
 
 import logging
@@ -15,32 +15,37 @@ from .api import TellinkAPI
 _LOGGER = logging.getLogger(__name__)
 
 
+# ----------------------------------------------------------------------
+# Setup / Teardown
+# ----------------------------------------------------------------------
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Tellink integration from a config entry."""
     username = entry.data.get("username")
     password = entry.data.get("password")
 
+    if not username or not password:
+        _LOGGER.error("[%s] Missing Tellink credentials in config entry", username)
+        raise ConfigEntryNotReady("Missing credentials")
+
     api = TellinkAPI(username, password)
 
-    # Retrieve polling intervals from options, with sensible defaults
     scan_interval = timedelta(seconds=entry.options.get("scan_interval", 3600))
     retry_interval = timedelta(seconds=entry.options.get("retry_interval", 3600))
 
     async def async_update_data():
-        """Fetch data from Tellink with retry and error handling."""
+        """Fetch data from Tellink with retry/backoff logic."""
         try:
             _LOGGER.debug("[%s] Fetching Tellink data", username)
             data = await api.get_data()
             if not data:
                 raise UpdateFailed("Empty or invalid data returned from Tellink API")
 
-            # Reset back to normal interval on successful fetch
             coordinator.update_interval = scan_interval
             return data
-
         except Exception as err:
             _LOGGER.warning(
-                "[%s] Update failed: %s; retry in %s seconds",
+                "[%s] Update failed: %s; retrying in %s s",
                 username,
                 err,
                 retry_interval.total_seconds(),
@@ -48,7 +53,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             coordinator.update_interval = retry_interval
             raise UpdateFailed(err)
 
-    # Create a shared coordinator per config entry
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
@@ -63,10 +67,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.error("[%s] Failed initial Tellink data refresh: %s", username, err)
         raise ConfigEntryNotReady from err
 
-    # Store coordinator for this entry
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
-
-    # Forward to the sensor platform
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
 
     _LOGGER.info("[%s] Tellink integration successfully initialized", username)
@@ -76,7 +77,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload Tellink integration."""
     username = entry.data.get("username")
-    _LOGGER.debug("Unloading Tellink integration for %s", username)
     unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id, None)
@@ -92,29 +92,30 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await async_setup_entry(hass, entry)
 
 
+# ----------------------------------------------------------------------
+# Migration handler — keeps entry versions consistent
+# ----------------------------------------------------------------------
+
 async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
-    """Migrate old config entries to the latest version."""
-    version = config_entry.version
-    _LOGGER.debug("Starting migration for Tellink entry version %s", version)
+    """Migrate old Tellink entries to the latest version."""
+    version = config_entry.version or 1
+    data = {**config_entry.data}
+    updated = False
 
-    # Migration path from v1 → v1.1.0
     if version == 1:
-        new_data = {**config_entry.data}
-        new_options = {**config_entry.options}
-
-        # No structural changes yet, but we future-proof the schema here.
-        hass.config_entries.async_update_entry(
-            config_entry,
-            data=new_data,
-            options=new_options,
-            version=2,  # increment internal version to mark migrated
+        config_entry.version = 2
+        updated = True
+        _LOGGER.info(
+            "[%s] Migrated Tellink config entry to version 2",
+            data.get("username"),
         )
 
-        _LOGGER.info(
-            "Successfully migrated Tellink config entry for %s to version 1.1.0",
-            new_data.get("username", "unknown"),
+    if updated:
+        hass.config_entries.async_update_entry(
+            config_entry,
+            data=data,
+            version=config_entry.version,
         )
         return True
 
-    _LOGGER.debug("No migration required for Tellink entry (version %s)", version)
     return True

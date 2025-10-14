@@ -1,10 +1,10 @@
 # 🛰️ Tellink Prepaid Integration for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-blue.svg)](https://hacs.xyz/)
-[![version](https://img.shields.io/badge/version-1.1.4-blue.svg)](https://github.com/renaudallard/tellinkroaming_ha)
-[![license](https://img.shields.io/github/license/renaudallard/tellinkroaming_ha)](LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/renaudallard/tellinkroaming_ha.svg)](https://github.com/renaudallard/tellinkroaming_ha/issues)
-[![GitHub stars](https://img.shields.io/github/stars/renaudallard/tellinkroaming_ha.svg)](https://github.com/renaudallard/tellinkroaming_ha/stargazers)
+[![version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/renaudallard/homeassistant_tellinkroaming)
+[![license](https://img.shields.io/github/license/renaudallard/homeassistant_tellinkroaming)](LICENSE)
+[![GitHub issues](https://img.shields.io/github/issues/renaudallard/homeassistant_tellinkroaming.svg)](https://github.com/renaudallard/homeassistant_tellinkroaming/issues)
+[![GitHub stars](https://img.shields.io/github/stars/renaudallard/homeassistant_tellinkroaming.svg)](https://github.com/renaudallard/homeassistant_tellinkroaming/stargazers)
 
 A **custom Home Assistant integration** for monitoring your **Tellink prepaid balance, SIM status, username, and validity date** directly from your dashboard.  
 Supports **multiple accounts**, **secure credential storage**, and **low-credit notifications**.
@@ -39,7 +39,7 @@ with category **Integration**
 ### Option 2 — Manual
 
 1. Download the latest release ZIP:  
-[📦 tellinkroaming_ha releases](https://github.com/renaudallard/tellinkroaming_ha/releases)
+[📦 homeassistant_tellinkroaming releases](https://github.com/renaudallard/homeassistant_tellinkroaming/releases)
 2. Extract it into:
 3. Restart Home Assistant
 4. Add the integration from the UI

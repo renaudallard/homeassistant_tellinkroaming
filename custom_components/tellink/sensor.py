@@ -13,6 +13,10 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 
+# ----------------------------------------------------------------------
+# Setup
+# ----------------------------------------------------------------------
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     """Set up Tellink sensors from a config entry."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
@@ -63,7 +67,26 @@ class TellinkBalanceSensor(BaseTellinkSensor):
 
     @property
     def native_value(self):
+        """Return the current balance."""
         return self.data.get("balance")
+
+    @property
+    def icon_color(self) -> str | None:
+        """Return dynamic color based on balance amount."""
+        balance = self.data.get("balance")
+        if balance is None:
+            return None
+
+        try:
+            balance = float(balance)
+        except (TypeError, ValueError):
+            return None
+
+        if balance < 2:
+            return "red"
+        elif balance < 4:
+            return "orange"
+        return "green"
 
 
 class TellinkStatusSensor(BaseTellinkSensor):
@@ -74,6 +97,7 @@ class TellinkStatusSensor(BaseTellinkSensor):
 
     @property
     def native_value(self):
+        """Return the account status string."""
         return self.data.get("status")
 
 
@@ -85,6 +109,7 @@ class TellinkUsernameSensor(BaseTellinkSensor):
 
     @property
     def native_value(self):
+        """Return the Tellink username."""
         return self.data.get("username")
 
 
@@ -106,7 +131,6 @@ class TellinkExpirySensor(BaseTellinkSensor):
         if isinstance(expiry_value, date):
             return expiry_value
 
-        # Try ISO format first (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)
         try:
             return datetime.fromisoformat(expiry_value).date()
         except Exception:

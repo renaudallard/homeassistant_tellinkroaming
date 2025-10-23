@@ -1,14 +1,14 @@
-202510231200
+202510231515
 # 🛰️ Tellink Prepaid Integration for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-blue.svg)](https://hacs.xyz/)
-[![version](https://img.shields.io/badge/version-1.2.1-blue.svg)](https://github.com/renaudallard/homeassistant_tellinkroaming)
+[![version](https://img.shields.io/badge/version-1.2.2-blue.svg)](https://github.com/renaudallard/homeassistant_tellinkroaming)
 [![license](https://img.shields.io/github/license/renaudallard/homeassistant_tellinkroaming)](LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/renaudallard/homeassistant_tellinkroaming.svg)](https://github.com/renaudallard/homeassistant_tellinkroaming/issues)
 [![GitHub stars](https://img.shields.io/github/stars/renaudallard/homeassistant_tellinkroaming.svg)](https://github.com/renaudallard/homeassistant_tellinkroaming/stargazers)
 
 A **custom Home Assistant integration** for monitoring your **Tellink prepaid balance, SIM status, username, and validity date** directly from your dashboard.  
-Supports **multiple accounts**, **sensors via a DataUpdateCoordinator**, and **low-credit notifications**.
+Supports **multiple accounts**, **sensors via a DataUpdateCoordinator**, **secure credential storage**, **Repairs “Fix” button for reauth**, and **low-credit notifications**.
 
 ---
 
@@ -20,6 +20,8 @@ Supports **multiple accounts**, **sensors via a DataUpdateCoordinator**, and **l
   - **SIM status (Active/Inactive)**
   - **Expiry date** (native `date` device class)
 - 🧾 Multiple accounts support
+- 🔐 **Secure credentials** stored in private HA storage (migrated automatically from older entries)
+- 🛠️ **Repairs** issue with a **Fix** button triggers reauth and reloads the entry
 - 🕒 Configurable **update interval** and **retry time**
 - ⚠️ Low credit alert examples
 - 🧰 Web-based configuration UI
@@ -64,12 +66,16 @@ You can later configure:
 Go to:  
 **Settings → Devices & Services → Tellink → Configure**
 
+### Repairs: Reauth via “Fix”
+If credentials go missing or are invalid, you’ll see a **Tellink needs reauthentication** issue in **Settings → Repairs**.  
+Click **Fix**, enter the new password, and the integration will **validate**, **store the secret securely**, **clear the issue**, and **reload**.
+
 ---
 
 ## 🧾 Example Sensors
 
-| Sensor Name              | Description                          | Device Class | Example Value |
-|-------------------------|--------------------------------------|--------------|---------------|
+| Sensor Name                | Description                          | Device Class | Example Value |
+|---------------------------|--------------------------------------|--------------|---------------|
 | `sensor.tellink_balance`  | Current credit amount (€)            | Monetary     | `6.75`        |
 | `sensor.tellink_status`   | SIM status (Active/Inactive)         | None         | `Active`      |
 | `sensor.tellink_username` | Tellink username (CLI)               | None         | `9189007815`  |
@@ -78,8 +84,6 @@ Go to:
 ---
 
 ## ⚠️ Low Credit Alerts
-
-You can use an automation such as:
 
 ```yaml
 alias: Tellink low credit alert
@@ -92,3 +96,14 @@ action:
     data:
       message: "Your Tellink balance is below 2 €!"
 mode: single
+```
+
+---
+
+## ✅ Compatibility & Notes
+
+- Compatible with **Home Assistant 2025.10**.
+- Domain is **`tellink`** (backward compatible).
+- Uses **DataUpdateCoordinator**; sensors **do not** call the API directly.
+- Expiry returns a proper `date` (HA 2025+ requirement).
+- JSON files (e.g., `manifest.json`, `hacs.json`, translations) do **not** include file header lines.

@@ -1,5 +1,5 @@
-# 202510231305
-"""Initialize the Tellink Prepaid integration (HA 2025+, safe credential handling)."""
+# 202510231345
+"""Initialize the Tellink Prepaid integration (HA 2025+, secure credential handling)."""
 from __future__ import annotations
 
 import logging
@@ -12,6 +12,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .const import DOMAIN
 from .api import TellinkAPI
+from .credentials import get_credential_store
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,10 +24,21 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Tellink integration from a config entry."""
     username = entry.data.get("username")
-    password = entry.data.get("password")
+    # Prefer secure store for password
+    cred_store = get_credential_store(hass)
+    cred = await cred_store.async_get(entry.entry_id)
+    password = cred.get("password") if cred else entry.data.get("password")
+
+    # Opportunistic migration in case migration step didn't run yet
+    if username and entry.data.get("password"):
+        await cred_store.async_save(entry.entry_id, username, entry.data["password"])
+        hass.config_entries.async_update_entry(
+            entry, data={**entry.data, "password": None} | {"username": username}, version=max(entry.version, 4)
+        )
+        password = entry.data["password"]
 
     if not username or not password:
-        _LOGGER.error("[%s] Missing Tellink credentials in config entry", username)
+        _LOGGER.error("[%s] Missing Tellink credentials for setup", username or "unknown")
         raise ConfigEntryNotReady("Missing credentials")
 
     api = TellinkAPI(username, password)
@@ -98,9 +110,9 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 # ----------------------------------------------------------------------
 
 async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
-    """Migrate old Tellink entries to the latest version (3)."""
+    """Migrate old Tellink entries to the latest version (4 with secure creds)."""
     current_version = config_entry.version or 1
-    data = dict(config_entry.data)  # keep as-is; adjust here if schema changes
+    data = dict(config_entry.data)  # copy
     new_version = current_version
     username = data.get("username", "unknown")
 
@@ -109,12 +121,21 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
         _LOGGER.info("[%s] Migrating Tellink config entry from v%d to v2", username, new_version)
         new_version = 2
 
-    # v2 -> v3 (no schema change today; reserved for future fields)
+    # v2 -> v3 (placeholder / future fields)
     if new_version < 3:
         _LOGGER.info("[%s] Migrating Tellink config entry from v%d to v3", username, new_version)
         new_version = 3
 
-    # Apply version bump via async_update_entry (do NOT assign to config_entry.version directly)
+    # v3 -> v4: move password into private storage and remove from entry data
+    if new_version < 4:
+        _LOGGER.info("[%s] Migrating Tellink config entry from v%d to v4 (secure creds)", username, new_version)
+        cred_store = get_credential_store(hass)
+        pwd = data.pop("password", None)
+        if username and pwd:
+            await cred_store.async_save(config_entry.entry_id, username, pwd)
+            _LOGGER.debug("[%s] Password moved to private storage", username)
+        new_version = 4
+
     if new_version != current_version:
         hass.config_entries.async_update_entry(
             config_entry,

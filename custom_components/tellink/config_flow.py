@@ -1,5 +1,5 @@
-# 202510231200
-"""Config flow for Tellink Prepaid integration (HA 2025+)."""
+# 202510231345
+"""Config flow for Tellink Prepaid integration (HA 2025+) with secure cred migration."""
 from __future__ import annotations
 
 import logging
@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle the Tellink config flow."""
 
-    VERSION = 3  # Keep in sync with async_migrate_entry in __init__.py
+    VERSION = 4  # Keep in sync with async_migrate_entry in __init__.py
 
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
         """Handle initial setup step."""
@@ -38,6 +38,7 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     await self.async_set_unique_id(username.lower())
                     self._abort_if_unique_id_configured()
 
+                    # Store password temporarily in entry data; migration will move it to private storage (v4)
                     return self.async_create_entry(
                         title=f"Tellink ({username})",
                         data={"username": username, "password": password},
@@ -76,7 +77,6 @@ class TellinkOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_init(self, user_input: dict | None = None) -> FlowResult:
         """Manage the Tellink options."""
         if user_input is not None:
-            # Persist options
             return self.async_create_entry(title="", data=user_input)
 
         current = self._entry.options

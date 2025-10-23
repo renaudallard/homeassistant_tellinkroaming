@@ -1,5 +1,5 @@
-# 202510231345
-"""Initialize the Tellink Prepaid integration (HA 2025+, secure credential handling)."""
+# 202510231505
+"""Initialize the Tellink Prepaid integration (HA 2025+, secure credential handling + Repairs)."""
 from __future__ import annotations
 
 import logging
@@ -9,12 +9,43 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers import issue_registry as ir
 
 from .const import DOMAIN
 from .api import TellinkAPI
 from .credentials import get_credential_store
 
 _LOGGER = logging.getLogger(__name__)
+
+ISSUE_ID_REAUTH = "reauth_required"
+
+
+# ----------------------------------------------------------------------
+# Helpers: Repairs (issue registry)
+# ----------------------------------------------------------------------
+
+def _create_reauth_issue(hass: HomeAssistant, entry: ConfigEntry, username: str | None) -> None:
+    """Create a Repairs issue to guide the user to reauthenticate (with Fix button)."""
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        ISSUE_ID_REAUTH,
+        is_fixable=True,
+        severity=ir.IssueSeverity.ERROR,
+        translation_key="reauth_required",
+        translation_placeholders={
+            "entry_title": entry.title or "Tellink",
+            "username": username or "unknown",
+        },
+        # This 'data' block is passed to our repairs fix flow so we know which entry to fix
+        data={"entry_id": entry.entry_id, "username": username or "unknown"},
+        learn_more_url="https://my.home-assistant.io/redirect/config_flow_start?domain=tellink",
+    )
+
+
+def _delete_reauth_issue(hass: HomeAssistant) -> None:
+    """Delete the reauth issue if it exists."""
+    ir.async_delete_issue(hass, DOMAIN, ISSUE_ID_REAUTH)
 
 
 # ----------------------------------------------------------------------
@@ -24,22 +55,33 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Tellink integration from a config entry."""
     username = entry.data.get("username")
-    # Prefer secure store for password
+
     cred_store = get_credential_store(hass)
     cred = await cred_store.async_get(entry.entry_id)
     password = cred.get("password") if cred else entry.data.get("password")
 
-    # Opportunistic migration in case migration step didn't run yet
+    # Opportunistic migration (if the migration step hasn't run yet)
     if username and entry.data.get("password"):
         await cred_store.async_save(entry.entry_id, username, entry.data["password"])
         hass.config_entries.async_update_entry(
-            entry, data={**entry.data, "password": None} | {"username": username}, version=max(entry.version, 4)
+            entry,
+            data={**entry.data, "password": None},
+            version=max(entry.version, 4),
         )
         password = entry.data["password"]
 
+    # If creds are missing or corrupt, open a Repairs issue and trigger reauth
     if not username or not password:
-        _LOGGER.error("[%s] Missing Tellink credentials for setup", username or "unknown")
+        _LOGGER.error("[%s] Missing/corrupt Tellink credentials", username or "unknown")
+        _create_reauth_issue(hass, entry, username)
+        try:
+            await hass.config_entries.async_start_reauth(entry)
+        except Exception:  # noqa: BLE001
+            _LOGGER.debug("Could not start reauth flow automatically; Repair issue created")
         raise ConfigEntryNotReady("Missing credentials")
+
+    # Credentials are present; ensure any old issue is cleared
+    _delete_reauth_issue(hass)
 
     api = TellinkAPI(username, password)
 
@@ -56,7 +98,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
             coordinator.update_interval = scan_interval
             return data
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             _LOGGER.warning(
                 "[%s] Update failed: %s; retrying in %s s",
                 username,
@@ -76,7 +118,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         await coordinator.async_config_entry_first_refresh()
-    except Exception as err:
+    except Exception as err:  # noqa: BLE001
         _LOGGER.error("[%s] Failed initial Tellink data refresh: %s", username, err)
         raise ConfigEntryNotReady from err
 
@@ -110,9 +152,9 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 # ----------------------------------------------------------------------
 
 async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
-    """Migrate old Tellink entries to the latest version (4 with secure creds)."""
+    """Migrate old Tellink entries to the latest version (4 with secure creds + Repairs)."""
     current_version = config_entry.version or 1
-    data = dict(config_entry.data)  # copy
+    data = dict(config_entry.data)
     new_version = current_version
     username = data.get("username", "unknown")
 
@@ -121,7 +163,7 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
         _LOGGER.info("[%s] Migrating Tellink config entry from v%d to v2", username, new_version)
         new_version = 2
 
-    # v2 -> v3 (placeholder / future fields)
+    # v2 -> v3 (placeholder)
     if new_version < 3:
         _LOGGER.info("[%s] Migrating Tellink config entry from v%d to v3", username, new_version)
         new_version = 3
@@ -131,9 +173,12 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
         _LOGGER.info("[%s] Migrating Tellink config entry from v%d to v4 (secure creds)", username, new_version)
         cred_store = get_credential_store(hass)
         pwd = data.pop("password", None)
-        if username and pwd:
-            await cred_store.async_save(config_entry.entry_id, username, pwd)
+        if data.get("username") and pwd:
+            await cred_store.async_save(config_entry.entry_id, data["username"], pwd)
             _LOGGER.debug("[%s] Password moved to private storage", username)
+        else:
+            # No password found to migrate; create a Repair issue so user can reauth
+            _create_reauth_issue(hass, config_entry, data.get("username"))
         new_version = 4
 
     if new_version != current_version:

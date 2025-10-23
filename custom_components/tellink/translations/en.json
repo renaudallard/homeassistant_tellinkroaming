@@ -2,33 +2,34 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connect to Tellink Prepaid",
-        "description": "Enter your Tellink Prepaid account credentials.",
+        "title": "Tellink Prepaid",
+        "description": "Enter your Tellink credentials.",
         "data": {
           "username": "Username",
           "password": "Password"
         }
-      }
-    },
-    "error": {
-      "invalid_auth": "Invalid username or password",
-      "cannot_connect": "Cannot connect to Tellink server",
-      "unknown": "An unexpected error occurred. Check the logs for details."
-    },
-    "abort": {
-      "already_configured": "This Tellink account is already configured."
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Tellink Update Settings",
-        "description": "Configure how often Tellink data should be refreshed.",
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate Tellink",
+        "description": "Your credentials are missing or invalid. Please enter a new password for {username}.",
         "data": {
-          "scan_interval": "Regular update interval (seconds)",
-          "retry_interval": "Retry interval after failure (seconds)"
+          "password": "New password"
         }
       }
+    },
+    "abort": {
+      "reauth_successful": "Reauthentication successful."
+    },
+    "error": {
+      "invalid_auth": "Invalid username or password.",
+      "cannot_connect": "Cannot connect right now.",
+      "unknown": "Unexpected error."
+    }
+  },
+  "issues": {
+    "reauth_required": {
+      "title": "Tellink needs reauthentication",
+      "description": "The Tellink integration \"{entry_title}\" for user **{username}** is missing credentials or they are no longer valid.\n\nClick **Fix** to enter a new password and restore connectivity, or open the Tellink integration from Settings → Devices & Services."
     }
   }
 }

@@ -1,3 +1,4 @@
+# 202510231200
 """Tellink sensor platform (Home Assistant 2025+ compatible)."""
 from __future__ import annotations
 

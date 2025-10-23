@@ -1,3 +1,4 @@
+# 202510231305
 """Initialize the Tellink Prepaid integration (HA 2025+, safe credential handling)."""
 from __future__ import annotations
 
@@ -97,25 +98,32 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 # ----------------------------------------------------------------------
 
 async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
-    """Migrate old Tellink entries to the latest version."""
-    version = config_entry.version or 1
-    data = {**config_entry.data}
-    updated = False
+    """Migrate old Tellink entries to the latest version (3)."""
+    current_version = config_entry.version or 1
+    data = dict(config_entry.data)  # keep as-is; adjust here if schema changes
+    new_version = current_version
+    username = data.get("username", "unknown")
 
-    if version == 1:
-        config_entry.version = 2
-        updated = True
-        _LOGGER.info(
-            "[%s] Migrated Tellink config entry to version 2",
-            data.get("username"),
-        )
+    # v1 -> v2 (placeholder)
+    if new_version < 2:
+        _LOGGER.info("[%s] Migrating Tellink config entry from v%d to v2", username, new_version)
+        new_version = 2
 
-    if updated:
+    # v2 -> v3 (no schema change today; reserved for future fields)
+    if new_version < 3:
+        _LOGGER.info("[%s] Migrating Tellink config entry from v%d to v3", username, new_version)
+        new_version = 3
+
+    # Apply version bump via async_update_entry (do NOT assign to config_entry.version directly)
+    if new_version != current_version:
         hass.config_entries.async_update_entry(
             config_entry,
             data=data,
-            version=config_entry.version,
+            options=config_entry.options,
+            version=new_version,
         )
-        return True
+        _LOGGER.debug("[%s] Migration complete: v%d -> v%d", username, current_version, new_version)
+    else:
+        _LOGGER.debug("[%s] No migration needed (v%d)", username, current_version)
 
     return True

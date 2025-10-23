@@ -1,0 +1,110 @@
+# 202510231200
+name: Auto release on manifest version change
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "custom_components/tellink/manifest.json"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: autorelease-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read versions (new vs previous commit)
+        id: versions
+        run: |
+          set -e
+          NEW=$(jq -r '.version' custom_components/tellink/manifest.json)
+          OLD=$(git show HEAD^:custom_components/tellink/manifest.json 2>/dev/null | jq -r '.version' || echo "")
+          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+          echo "old=$OLD" >> "$GITHUB_OUTPUT"
+          echo "New version: $NEW"
+          echo "Old version: $OLD"
+
+      - name: Decide if version changed
+        id: changed
+        run: |
+          if [ -z "${{ steps.versions.outputs.new }}" ]; then
+            echo "Manifest version missing; skipping."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "${{ steps.versions.outputs.new }}" = "${{ steps.versions.outputs.old }}" ]; then
+            echo "Version unchanged; skipping."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Version changed."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check if tag already exists
+        id: tag
+        if: steps.changed.outputs.changed == 'true'
+        run: |
+          TAG="v${{ steps.versions.outputs.new }}"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag $TAG already exists."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Tag $TAG does not exist yet."
+          fi
+
+      - name: Create and push tag
+        if: steps.changed.outputs.changed == 'true' && steps.tag.outputs.exists == 'false'
+        run: |
+          set -e
+          TAG="v${{ steps.versions.outputs.new }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG"
+          git push origin "$TAG"
+
+      - name: Build integration ZIP (HACS-friendly)
+        id: package
+        if: steps.changed.outputs.changed == 'true'
+        run: |
+          set -e
+          VER="${{ steps.versions.outputs.new }}"
+          mkdir -p dist
+          # Package with repo-root layout so HACS/manual users can drop it in
+          zip -r "dist/tellink-${VER}.zip" custom_components/ hacs.json README.md LICENSE 2>/dev/null || \
+          zip -r "dist/tellink-${VER}.zip" custom_components/ hacs.json README.md 2>/dev/null || \
+          zip -r "dist/tellink-${VER}.zip" custom_components/ hacs.json 2>/dev/null || \
+          zip -r "dist/tellink-${VER}.zip" custom_components/
+          echo "asset=dist/tellink-${VER}.zip" >> "$GITHUB_OUTPUT"
+          echo "Built asset: dist/tellink-${VER}.zip"
+
+      - name: Create GitHub Release
+        if: steps.changed.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.versions.outputs.new }}
+          name: Tellink v${{ steps.versions.outputs.new }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          files: |
+            ${{ steps.package.outputs.asset }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "Version changed: ${{ steps.changed.outputs.changed }}"
+          echo "Released tag: v${{ steps.versions.outputs.new }}"
+          echo "Attached asset: ${{ steps.package.outputs.asset }}"

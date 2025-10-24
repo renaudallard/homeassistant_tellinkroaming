@@ -2,7 +2,7 @@
 # 🛰️ Tellink Prepaid Integration for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-blue.svg)](https://hacs.xyz/)
-[![version](https://img.shields.io/badge/version-1.2.2-blue.svg)](https://github.com/renaudallard/homeassistant_tellinkroaming)
+[![version](https://img.shields.io/badge/version-1.2.3-blue.svg)](https://github.com/renaudallard/homeassistant_tellinkroaming)
 [![license](https://img.shields.io/github/license/renaudallard/homeassistant_tellinkroaming)](LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/renaudallard/homeassistant_tellinkroaming.svg)](https://github.com/renaudallard/homeassistant_tellinkroaming/issues)
 [![GitHub stars](https://img.shields.io/github/stars/renaudallard/homeassistant_tellinkroaming.svg)](https://github.com/renaudallard/homeassistant_tellinkroaming/stargazers)

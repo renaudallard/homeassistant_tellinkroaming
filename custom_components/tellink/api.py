@@ -7,8 +7,13 @@ import json
 import logging
 from datetime import datetime
 
+import ssl
+
 import websockets
 from websockets.exceptions import ConnectionClosedError, WebSocketException
+
+
+SSL_CONTEXT = ssl.create_default_context()
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +34,7 @@ class TellinkAPI:
         try:
             async with websockets.connect(
                 self.URL,
+                ssl=SSL_CONTEXT,
                 max_size=2**20,
                 ping_interval=None,
                 close_timeout=5,

@@ -64,12 +64,29 @@ class TellinkBalanceSensor(BaseTellinkSensor):
     _attr_native_unit_of_measurement = "€"
 
     def __init__(self, coordinator, username):
-        super().__init__(coordinator, username, "Balance", "mdi:currency-eur")
+        super().__init__(coordinator, username, "Balance", "mdi:sim-outline")
 
     @property
     def native_value(self):
         """Return the current balance."""
         return self.data.get("balance")
+
+    @property
+    def icon(self) -> str | None:
+        """Return an icon that reflects the balance level."""
+        balance = self.data.get("balance")
+        if balance is None:
+            return "mdi:sim-outline"
+
+        try:
+            balance = float(balance)
+        except (TypeError, ValueError):
+            return "mdi:sim-outline"
+
+        if balance < 2:
+            return "mdi:sim-alert-outline"
+
+        return "mdi:sim-outline"
 
     @property
     def icon_color(self) -> str | None:

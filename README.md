@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://hacs.xyz/"><img src="https://img.shields.io/badge/HACS-Custom-blue.svg" alt="HACS" /></a>
-  <a href="https://github.com/renaudallard/homeassistant_tellinkroaming"><img src="https://img.shields.io/badge/version-1.2.4-blue.svg" alt="version" /></a>
+  <a href="https://github.com/renaudallard/homeassistant_tellinkroaming"><img src="https://img.shields.io/badge/version-1.3.0-blue.svg" alt="version" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/renaudallard/homeassistant_tellinkroaming" alt="license" /></a>
   <a href="https://github.com/renaudallard/homeassistant_tellinkroaming/issues"><img src="https://img.shields.io/github/issues/renaudallard/homeassistant_tellinkroaming.svg" alt="issues" /></a>
   <a href="https://github.com/renaudallard/homeassistant_tellinkroaming/stargazers"><img src="https://img.shields.io/github/stars/renaudallard/homeassistant_tellinkroaming.svg" alt="stars" /></a>

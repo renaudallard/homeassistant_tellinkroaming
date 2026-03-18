@@ -110,3 +110,4 @@ mode: single
 - Domain: **`tellink`**
 - Uses **DataUpdateCoordinator**; sensors do not call the API directly
 - Expiry returns a proper `date` (HA 2025+ requirement)
+- Brand images (icon and logo) included for HA 2026.3+ UI display

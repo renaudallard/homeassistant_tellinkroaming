@@ -1,5 +1,5 @@
-# 202510231345
 """Private credential storage for Tellink using Home Assistant Store(private=True)."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Optional

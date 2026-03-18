@@ -20,7 +20,7 @@
 
 ## Features
 
-- **Balance** sensor (€) with dynamic icon color (red < €2, orange < €4, green otherwise)
+- **Balance** sensor (€) with low-balance alert icon (below €2)
 - **Username**, **SIM status**, and **Expiry date** sensors
 - Multiple accounts support
 - Secure credentials stored in private HA storage (auto-migrated from older entries)

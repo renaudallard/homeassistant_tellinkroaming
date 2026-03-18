@@ -1,5 +1,5 @@
-# 202510231505
 """Repairs fix flows for Tellink (adds the 'Fix' button for reauth)."""
+
 from __future__ import annotations
 
 import logging
@@ -7,7 +7,11 @@ import voluptuous as vol
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
-from homeassistant.helpers.selector import TextSelector, TextSelectorConfig, TextSelectorType
+from homeassistant.helpers.selector import (
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
+)
 from homeassistant.components.repairs import RepairsFlow
 
 from .const import DOMAIN
@@ -49,7 +53,9 @@ class TellinkRepairFlow(RepairsFlow):
                 else:
                     # Save into private credential store
                     cred_store = get_credential_store(self.hass)
-                    await cred_store.async_save(self._entry_id, self._username, password)
+                    await cred_store.async_save(
+                        self._entry_id, self._username, password
+                    )
 
                     # Clear the issue and reload the entry
                     ir.async_delete_issue(self.hass, DOMAIN, ISSUE_ID_REAUTH)
@@ -57,7 +63,9 @@ class TellinkRepairFlow(RepairsFlow):
                     if entry:
                         await self.hass.config_entries.async_reload(self._entry_id)
 
-                    return self.async_create_entry(title="Reauthentication successful", data={})
+                    return self.async_create_entry(
+                        title="Reauthentication successful", data={}
+                    )
             except TimeoutError:
                 errors["base"] = "cannot_connect"
             except Exception:  # noqa: BLE001

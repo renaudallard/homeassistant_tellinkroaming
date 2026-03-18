@@ -1,5 +1,5 @@
-# 202510231430
 """Config flow for Tellink Prepaid integration (HA 2025+) with secure cred migration + Reauth."""
+
 from __future__ import annotations
 
 import logging
@@ -63,18 +63,35 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }
         )
 
-        return self.async_show_form(step_id="user", data_schema=data_schema, errors=errors)
+        return self.async_show_form(
+            step_id="user", data_schema=data_schema, errors=errors
+        )
 
     # --------------------------
     # Reauthentication
     # --------------------------
+    @staticmethod
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> TellinkOptionsFlowHandler:
+        """Return the options flow handler."""
+        return TellinkOptionsFlowHandler(config_entry)
+
     async def async_step_reauth(self, entry_data: dict) -> FlowResult:
         """Start reauth: ask the user for a new password."""
         self._reauth_username = entry_data.get("username")
-        self._reauth_entry = await self.async_set_unique_id(self._reauth_username.lower())
+        if not self._reauth_username:
+            return self.async_abort(reason="unknown")
+        self._reauth_entry = await self.async_set_unique_id(
+            self._reauth_username.lower()
+        )
+        if not self._reauth_entry:
+            return self.async_abort(reason="unknown")
         return await self.async_step_reauth_confirm()
 
-    async def async_step_reauth_confirm(self, user_input: dict | None = None) -> FlowResult:
+    async def async_step_reauth_confirm(
+        self, user_input: dict | None = None
+    ) -> FlowResult:
         errors: dict[str, str] = {}
         username = getattr(self, "_reauth_username", None)
 
@@ -82,14 +99,18 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             password = user_input["password"]
             api = TellinkAPI(username, password)
             try:
-                _LOGGER.debug("Validating Tellink credentials during reauth for %s", username)
+                _LOGGER.debug(
+                    "Validating Tellink credentials during reauth for %s", username
+                )
                 data = await api.get_data()
                 if not data:
                     errors["base"] = "invalid_auth"
                 else:
                     # Save to private credential store and clear the Repairs issue
                     cred_store = get_credential_store(self.hass)
-                    await cred_store.async_save(self._reauth_entry.entry_id, username, password)
+                    await cred_store.async_save(
+                        self._reauth_entry.entry_id, username, password
+                    )
                     ir.async_delete_issue(self.hass, DOMAIN, ISSUE_ID_REAUTH)
                     # Finish reauth successfully
                     return self.async_abort(reason="reauth_successful")
@@ -104,12 +125,15 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required("password", description={"sensitive": True}): str,
             }
         )
-        return self.async_show_form(step_id="reauth_confirm", data_schema=schema, errors=errors)
+        return self.async_show_form(
+            step_id="reauth_confirm", data_schema=schema, errors=errors
+        )
 
 
 # ----------------------------------------------------------------------
 # Options Flow (scan_interval / retry_interval)
 # ----------------------------------------------------------------------
+
 
 class TellinkOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle Tellink options."""
@@ -125,13 +149,12 @@ class TellinkOptionsFlowHandler(config_entries.OptionsFlow):
         current = self._entry.options
         schema = vol.Schema(
             {
-                vol.Required("scan_interval", default=current.get("scan_interval", 3600)): int,
-                vol.Required("retry_interval", default=current.get("retry_interval", 3600)): int,
+                vol.Required(
+                    "scan_interval", default=current.get("scan_interval", 3600)
+                ): int,
+                vol.Required(
+                    "retry_interval", default=current.get("retry_interval", 3600)
+                ): int,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)
-
-
-async def async_get_options_flow(config_entry: config_entries.ConfigEntry):
-    """Return the options flow handler."""
-    return TellinkOptionsFlowHandler(config_entry)

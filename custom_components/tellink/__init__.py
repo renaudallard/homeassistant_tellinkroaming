@@ -1,5 +1,5 @@
-# 202510231505
 """Initialize the Tellink Prepaid integration (HA 2025+, secure credential handling + Repairs)."""
+
 from __future__ import annotations
 
 import logging
@@ -24,7 +24,10 @@ ISSUE_ID_REAUTH = "reauth_required"
 # Helpers: Repairs (issue registry)
 # ----------------------------------------------------------------------
 
-def _create_reauth_issue(hass: HomeAssistant, entry: ConfigEntry, username: str | None) -> None:
+
+def _create_reauth_issue(
+    hass: HomeAssistant, entry: ConfigEntry, username: str | None
+) -> None:
     """Create a Repairs issue to guide the user to reauthenticate (with Fix button)."""
     ir.async_create_issue(
         hass,
@@ -52,6 +55,7 @@ def _delete_reauth_issue(hass: HomeAssistant) -> None:
 # Setup / Teardown
 # ----------------------------------------------------------------------
 
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Tellink integration from a config entry."""
     username = entry.data.get("username")
@@ -68,7 +72,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             data={**entry.data, "password": None},
             version=max(entry.version, 4),
         )
-        password = entry.data["password"]
 
     # If creds are missing or corrupt, open a Repairs issue and trigger reauth
     if not username or not password:
@@ -77,7 +80,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         try:
             await hass.config_entries.async_start_reauth(entry)
         except Exception:  # noqa: BLE001
-            _LOGGER.debug("Could not start reauth flow automatically; Repair issue created")
+            _LOGGER.debug(
+                "Could not start reauth flow automatically; Repair issue created"
+            )
         raise ConfigEntryNotReady("Missing credentials")
 
     # Credentials are present; ensure any old issue is cleared
@@ -151,6 +156,7 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 # Migration handler — keeps entry versions consistent
 # ----------------------------------------------------------------------
 
+
 async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Migrate old Tellink entries to the latest version (4 with secure creds + Repairs)."""
     current_version = config_entry.version or 1
@@ -160,17 +166,25 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
 
     # v1 -> v2 (placeholder)
     if new_version < 2:
-        _LOGGER.info("[%s] Migrating Tellink config entry from v%d to v2", username, new_version)
+        _LOGGER.info(
+            "[%s] Migrating Tellink config entry from v%d to v2", username, new_version
+        )
         new_version = 2
 
     # v2 -> v3 (placeholder)
     if new_version < 3:
-        _LOGGER.info("[%s] Migrating Tellink config entry from v%d to v3", username, new_version)
+        _LOGGER.info(
+            "[%s] Migrating Tellink config entry from v%d to v3", username, new_version
+        )
         new_version = 3
 
     # v3 -> v4: move password into private storage and remove from entry data
     if new_version < 4:
-        _LOGGER.info("[%s] Migrating Tellink config entry from v%d to v4 (secure creds)", username, new_version)
+        _LOGGER.info(
+            "[%s] Migrating Tellink config entry from v%d to v4 (secure creds)",
+            username,
+            new_version,
+        )
         cred_store = get_credential_store(hass)
         pwd = data.pop("password", None)
         if data.get("username") and pwd:
@@ -188,7 +202,12 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
             options=config_entry.options,
             version=new_version,
         )
-        _LOGGER.debug("[%s] Migration complete: v%d -> v%d", username, current_version, new_version)
+        _LOGGER.debug(
+            "[%s] Migration complete: v%d -> v%d",
+            username,
+            current_version,
+            new_version,
+        )
     else:
         _LOGGER.debug("[%s] No migration needed (v%d)", username, current_version)
 

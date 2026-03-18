@@ -1,5 +1,5 @@
-# 202510231200
 """Tellink API handler — WebSocket communication with mytellink.com."""
+
 from __future__ import annotations
 
 import asyncio
@@ -42,7 +42,9 @@ class TellinkAPI:
                 # Wait for Challenge
                 try:
                     challenge_msg = await asyncio.wait_for(ws.recv(), timeout=5)
-                    _LOGGER.debug("[%s] Received challenge: %s", self.username, challenge_msg)
+                    _LOGGER.debug(
+                        "[%s] Received challenge: %s", self.username, challenge_msg
+                    )
                 except asyncio.TimeoutError:
                     _LOGGER.warning("[%s] Timeout waiting for challenge", self.username)
                     return {}

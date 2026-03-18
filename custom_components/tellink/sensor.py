@@ -1,5 +1,5 @@
-# 202510231200
 """Tellink sensor platform (Home Assistant 2025+ compatible)."""
+
 from __future__ import annotations
 
 import logging
@@ -18,7 +18,10 @@ _LOGGER = logging.getLogger(__name__)
 # Setup
 # ----------------------------------------------------------------------
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
+
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
+):
     """Set up Tellink sensors from a config entry."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     username = entry.data.get("username")
@@ -37,6 +40,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 # ----------------------------------------------------------------------
 # Base class
 # ----------------------------------------------------------------------
+
 
 class BaseTellinkSensor(CoordinatorEntity, SensorEntity):
     """Base class for Tellink sensors."""
@@ -57,6 +61,7 @@ class BaseTellinkSensor(CoordinatorEntity, SensorEntity):
 # ----------------------------------------------------------------------
 # Individual sensors
 # ----------------------------------------------------------------------
+
 
 class TellinkBalanceSensor(BaseTellinkSensor):
     """Representation of the Tellink prepaid balance sensor."""
@@ -87,24 +92,6 @@ class TellinkBalanceSensor(BaseTellinkSensor):
             return "mdi:sim-alert-outline"
 
         return "mdi:sim-outline"
-
-    @property
-    def icon_color(self) -> str | None:
-        """Return dynamic color based on balance amount."""
-        balance = self.data.get("balance")
-        if balance is None:
-            return None
-
-        try:
-            balance = float(balance)
-        except (TypeError, ValueError):
-            return None
-
-        if balance < 2:
-            return "red"
-        elif balance < 4:
-            return "orange"
-        return "green"
 
 
 class TellinkStatusSensor(BaseTellinkSensor):
@@ -152,5 +139,7 @@ class TellinkExpirySensor(BaseTellinkSensor):
         try:
             return datetime.fromisoformat(expiry_value).date()
         except Exception:
-            _LOGGER.debug("[%s] Could not parse expiry value: %s", self._username, expiry_value)
+            _LOGGER.debug(
+                "[%s] Could not parse expiry value: %s", self._username, expiry_value
+            )
             return None

@@ -1,93 +1,93 @@
-202510231515
 <p align="center">
   <img src="logo.png" alt="Tellink Roaming" />
 </p>
 
-# 🛰️ Tellink Prepaid Integration for Home Assistant
+<h1 align="center">Tellink Prepaid Integration for Home Assistant</h1>
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-blue.svg)](https://hacs.xyz/)
-[![version](https://img.shields.io/badge/version-1.2.4-blue.svg)](https://github.com/renaudallard/homeassistant_tellinkroaming)
-[![license](https://img.shields.io/github/license/renaudallard/homeassistant_tellinkroaming)](LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/renaudallard/homeassistant_tellinkroaming.svg)](https://github.com/renaudallard/homeassistant_tellinkroaming/issues)
-[![GitHub stars](https://img.shields.io/github/stars/renaudallard/homeassistant_tellinkroaming.svg)](https://github.com/renaudallard/homeassistant_tellinkroaming/stargazers)
+<p align="center">
+  <a href="https://hacs.xyz/"><img src="https://img.shields.io/badge/HACS-Custom-blue.svg" alt="HACS" /></a>
+  <a href="https://github.com/renaudallard/homeassistant_tellinkroaming"><img src="https://img.shields.io/badge/version-1.2.4-blue.svg" alt="version" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/renaudallard/homeassistant_tellinkroaming" alt="license" /></a>
+  <a href="https://github.com/renaudallard/homeassistant_tellinkroaming/issues"><img src="https://img.shields.io/github/issues/renaudallard/homeassistant_tellinkroaming.svg" alt="issues" /></a>
+  <a href="https://github.com/renaudallard/homeassistant_tellinkroaming/stargazers"><img src="https://img.shields.io/github/stars/renaudallard/homeassistant_tellinkroaming.svg" alt="stars" /></a>
+</p>
 
-A **custom Home Assistant integration** for monitoring your **Tellink prepaid balance, SIM status, username, and validity date** directly from your dashboard.  
-Supports **multiple accounts**, **sensors via a DataUpdateCoordinator**, **secure credential storage**, **Repairs “Fix” button for reauth**, and **low-credit notifications**.
-
----
-
-## ✨ Features
-
-- 📊 Sensors for:
-  - **Balance (€)** with dynamic **icon color** *(red < €2, orange < €4, green otherwise)*
-  - **Username**
-  - **SIM status (Active/Inactive)**
-  - **Expiry date** (native `date` device class)
-- 🧾 Multiple accounts support
-- 🔐 **Secure credentials** stored in private HA storage (migrated automatically from older entries)
-- 🛠️ **Repairs** issue with a **Fix** button triggers reauth and reloads the entry
-- 🕒 Configurable **update interval** and **retry time**
-- ⚠️ Low credit alert examples
-- 🧰 Web-based configuration UI
+<p align="center">
+  A custom Home Assistant integration for monitoring your <strong>Tellink prepaid balance, SIM status, username, and validity date</strong> directly from your dashboard.
+</p>
 
 ---
 
-## 🧩 Installation
+## Features
 
-### Option 1 — HACS (Recommended)
+- **Balance** sensor (€) with dynamic icon color (red < €2, orange < €4, green otherwise)
+- **Username**, **SIM status**, and **Expiry date** sensors
+- Multiple accounts support
+- Secure credentials stored in private HA storage (auto-migrated from older entries)
+- Repairs issue with a **Fix** button for reauthentication
+- Configurable update and retry intervals
+- Low credit alert automation example
+- Web-based configuration UI
 
-1. Go to **HACS → Integrations → Custom Repositories**
-2. Add repository (category **Integration**):  
+---
+
+## Installation
+
+### HACS (Recommended)
+
+1. Go to **HACS > Integrations > Custom Repositories**
+2. Add repository (category **Integration**):
    `https://github.com/renaudallard/homeassistant_tellinkroaming`
 3. Click **Download** and restart Home Assistant
-4. Add the integration via  
-   **Settings → Devices & Services → Add Integration → Tellink Prepaid**
+4. Add the integration via **Settings > Devices & Services > Add Integration > Tellink Prepaid**
 
-### Option 2 — Manual
+### Manual
 
-1. Download the latest release ZIP:  
-   `https://github.com/renaudallard/homeassistant_tellinkroaming/releases`
-2. Extract it into your HA config folder at:  
-   `<config>/custom_components/tellink/`
+1. Download the latest release from the [releases page](https://github.com/renaudallard/homeassistant_tellinkroaming/releases)
+2. Extract into `<config>/custom_components/tellink/`
 3. Restart Home Assistant
 4. Add the integration from the UI
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
-### Step 1: Login
+### Login
+
 When adding the integration:
 - Enter your **Tellink username** (usually your phone number)
 - Enter your **password**
-- Click **Submit** — password is marked **sensitive** in the UI
+- Click **Submit**
 
-### Step 2: Options
-You can later configure:
-- **Update interval** (default 3600 s)
-- **Retry interval** (default 3600 s)
+### Options
 
-Go to:  
-**Settings → Devices & Services → Tellink → Configure**
+You can configure update and retry intervals under:
+**Settings > Devices & Services > Tellink > Configure**
 
-### Repairs: Reauth via “Fix”
-If credentials go missing or are invalid, you’ll see a **Tellink needs reauthentication** issue in **Settings → Repairs**.  
-Click **Fix**, enter the new password, and the integration will **validate**, **store the secret securely**, **clear the issue**, and **reload**.
+| Option            | Default |
+|-------------------|---------|
+| Update interval   | 3600 s  |
+| Retry interval    | 3600 s  |
 
----
+### Reauthentication
 
-## 🧾 Example Sensors
-
-| Sensor Name                | Description                          | Device Class | Example Value |
-|---------------------------|--------------------------------------|--------------|---------------|
-| `sensor.tellink_balance`  | Current credit amount (€)            | Monetary     | `6.75`        |
-| `sensor.tellink_status`   | SIM status (Active/Inactive)         | None         | `Active`      |
-| `sensor.tellink_username` | Tellink username (CLI)               | None         | `9189007815`  |
-| `sensor.tellink_expiry`   | Expiry date of validity              | Date         | `2037-12-31`  |
+If credentials become invalid, a **Tellink needs reauthentication** issue appears in **Settings > Repairs**.
+Click **Fix**, enter the new password, and the integration will validate, store, and reload automatically.
 
 ---
 
-## ⚠️ Low Credit Alerts
+## Sensors
+
+| Sensor                     | Description               | Device Class | Example       |
+|----------------------------|---------------------------|--------------|---------------|
+| `sensor.tellink_balance`   | Current credit amount (€) | Monetary     | `6.75`        |
+| `sensor.tellink_status`    | SIM status                | None         | `Active`      |
+| `sensor.tellink_username`  | Tellink username           | None         | `9189007815`  |
+| `sensor.tellink_expiry`    | Validity expiry date      | Date         | `2037-12-31`  |
+
+---
+
+## Low Credit Alert Example
 
 ```yaml
 alias: Tellink low credit alert
@@ -98,16 +98,15 @@ trigger:
 action:
   - service: notify.mobile_app_yourdevice
     data:
-      message: "Your Tellink balance is below 2 €!"
+      message: "Your Tellink balance is below 2 EUR!"
 mode: single
 ```
 
 ---
 
-## ✅ Compatibility & Notes
+## Notes
 
-- Compatible with **Home Assistant 2025.10**.
-- Domain is **`tellink`** (backward compatible).
-- Uses **DataUpdateCoordinator**; sensors **do not** call the API directly.
-- Expiry returns a proper `date` (HA 2025+ requirement).
-- JSON files (e.g., `manifest.json`, `hacs.json`, translations) do **not** include file header lines.
+- Compatible with **Home Assistant 2025.10+**
+- Domain: **`tellink`**
+- Uses **DataUpdateCoordinator**; sensors do not call the API directly
+- Expiry returns a proper `date` (HA 2025+ requirement)

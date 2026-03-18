@@ -98,11 +98,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         try:
             _LOGGER.debug("[%s] Fetching Tellink data", username)
             data = await api.get_data()
-            if not data:
-                raise UpdateFailed("Empty or invalid data returned from Tellink API")
-
-            coordinator.update_interval = scan_interval
-            return data
         except Exception as err:  # noqa: BLE001
             _LOGGER.warning(
                 "[%s] Update failed: %s; retrying in %s s",
@@ -111,7 +106,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 retry_interval.total_seconds(),
             )
             coordinator.update_interval = retry_interval
-            raise UpdateFailed(err)
+            raise UpdateFailed(err) from err
+
+        if not data:
+            coordinator.update_interval = retry_interval
+            raise UpdateFailed("Empty or invalid data returned from Tellink API")
+
+        coordinator.update_interval = scan_interval
+        return data
 
     coordinator = DataUpdateCoordinator(
         hass,
@@ -142,6 +144,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN].pop(entry.entry_id, None)
         _LOGGER.debug("[%s] Unloaded Tellink integration", username)
     return unload_ok
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Clean up credentials when an entry is removed."""
+    cred_store = get_credential_store(hass)
+    await cred_store.async_delete(entry.entry_id)
+    _LOGGER.debug("[%s] Removed stored credentials", entry.data.get("username"))
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:

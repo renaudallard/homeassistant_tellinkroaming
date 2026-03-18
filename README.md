@@ -1,4 +1,8 @@
 202510231515
+<p align="center">
+  <img src="logo.png" alt="Tellink Roaming" />
+</p>
+
 # 🛰️ Tellink Prepaid Integration for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-blue.svg)](https://hacs.xyz/)

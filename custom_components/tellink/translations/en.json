@@ -18,12 +18,25 @@
       }
     },
     "abort": {
-      "reauth_successful": "Reauthentication successful."
+      "reauth_successful": "Reauthentication successful.",
+      "unknown": "An unexpected error occurred. Please try again."
     },
     "error": {
       "invalid_auth": "Invalid username or password.",
       "cannot_connect": "Cannot connect right now.",
       "unknown": "Unexpected error."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Tellink Options",
+        "description": "Configure update intervals for the Tellink integration.",
+        "data": {
+          "scan_interval": "Update interval (seconds)",
+          "retry_interval": "Retry interval (seconds)"
+        }
+      }
     }
   },
   "issues": {

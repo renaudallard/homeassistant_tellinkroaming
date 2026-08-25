@@ -120,15 +120,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         update_interval=scan_interval,
     )
 
+    # Registered before the first refresh, which can abort setup: an entry that
+    # fails to come up must still pick up new intervals from the options flow.
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
     # Raises ConfigEntryAuthFailed, ConfigEntryError or ConfigEntryNotReady itself;
     # catching those here would hide a refused login from the reauth machinery.
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
-
-    # Reload when the user changes the intervals in the options flow.
-    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     _LOGGER.info("[%s] Tellink integration successfully initialized", username)
     return True

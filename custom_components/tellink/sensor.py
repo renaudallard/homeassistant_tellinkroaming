@@ -8,6 +8,7 @@ from datetime import date, datetime
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
@@ -52,6 +53,13 @@ class BaseTellinkSensor(CoordinatorEntity, SensorEntity):
         self._attr_name = f"Tellink {sensor_type} ({username})"
         self._attr_unique_id = f"tellink_{sensor_type.lower()}_{username}"
         self._attr_icon = icon
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, username)},
+            name=f"Tellink ({username})",
+            manufacturer="Tellink",
+            model="Prepaid SIM",
+            configuration_url="https://www.mytellink.com/prepaid",
+        )
 
     @property
     def data(self) -> dict:

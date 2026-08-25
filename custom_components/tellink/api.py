@@ -103,6 +103,9 @@ class TellinkAPI:
                     except json.JSONDecodeError:
                         continue
 
+                    if not isinstance(data, dict):
+                        continue
+
                     if data.get("tag") == "SessionCli":
                         parsed = self._parse_session_cli(data)
                         if not parsed:

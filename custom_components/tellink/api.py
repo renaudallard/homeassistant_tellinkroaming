@@ -130,7 +130,10 @@ class TellinkAPI:
                 return {}
 
             cli = contents[0]
-            balance = round(float(cli.get("wcliCredit", 0.0)), 2)
+            # No credit field at all is unknown, not zero: reporting zero fires
+            # the low credit alerts and writes a false trough into statistics.
+            raw_credit = cli.get("wcliCredit")
+            balance = None if raw_credit is None else round(float(raw_credit), 2)
             status = cli.get("wcliStatus")
             username = cli.get("wcliUsername")
             validity_list = cli.get("wcliValidity") or []

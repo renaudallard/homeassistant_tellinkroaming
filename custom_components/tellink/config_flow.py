@@ -30,6 +30,12 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             username = user_input["username"].strip()
             password = user_input["password"]
 
+            # Before the login, so re-adding a configured account says so
+            # instead of spending a round trip to the portal first. Outside any
+            # try: _abort_if_unique_id_configured signals by raising.
+            await self.async_set_unique_id(username.lower())
+            self._abort_if_unique_id_configured()
+
             api = TellinkAPI(username, password)
 
             try:
@@ -43,10 +49,6 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected error validating Tellink credentials")
                 errors["base"] = "unknown"
             else:
-                # Outside the try: _abort_if_unique_id_configured signals by raising.
-                await self.async_set_unique_id(username.lower())
-                self._abort_if_unique_id_configured()
-
                 # Straight into private storage; the entry data never sees it.
                 cred_store = get_credential_store(self.hass)
                 await cred_store.async_save(username.lower(), username, password)

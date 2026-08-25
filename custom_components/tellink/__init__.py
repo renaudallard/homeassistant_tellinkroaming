@@ -7,7 +7,7 @@ from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -73,17 +73,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             version=max(entry.version, 4),
         )
 
-    # If creds are missing or corrupt, open a Repairs issue and trigger reauth
+    # If creds are missing or corrupt, open a Repairs issue and trigger reauth.
+    # ConfigEntryAuthFailed makes Home Assistant start the reauth flow itself.
     if not username or not password:
         _LOGGER.error("[%s] Missing/corrupt Tellink credentials", username or "unknown")
         _create_reauth_issue(hass, entry, username)
-        try:
-            await hass.config_entries.async_start_reauth(entry)
-        except Exception:  # noqa: BLE001
-            _LOGGER.debug(
-                "Could not start reauth flow automatically; Repair issue created"
-            )
-        raise ConfigEntryNotReady("Missing credentials")
+        raise ConfigEntryAuthFailed("Missing credentials")
 
     # Credentials are present; ensure any old issue is cleared
     _delete_reauth_issue(hass)
@@ -118,16 +113,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
+        config_entry=entry,
         name=f"tellink_{username}",
         update_method=async_update_data,
         update_interval=scan_interval,
     )
 
-    try:
-        await coordinator.async_config_entry_first_refresh()
-    except Exception as err:
-        _LOGGER.error("[%s] Failed initial Tellink data refresh: %s", username, err)
-        raise ConfigEntryNotReady from err
+    # Raises ConfigEntryAuthFailed, ConfigEntryError or ConfigEntryNotReady itself;
+    # catching those here would hide a refused login from the reauth machinery.
+    await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])

@@ -98,7 +98,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         try:
             _LOGGER.debug("[%s] Fetching Tellink data", username)
             data = await api.get_data()
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             _LOGGER.warning(
                 "[%s] Update failed: %s; retrying in %s s",
                 username,
@@ -125,7 +125,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         await coordinator.async_config_entry_first_refresh()
-    except Exception as err:  # noqa: BLE001
+    except Exception as err:
         _LOGGER.error("[%s] Failed initial Tellink data refresh: %s", username, err)
         raise ConfigEntryNotReady from err
 

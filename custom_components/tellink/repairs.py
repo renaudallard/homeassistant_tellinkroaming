@@ -68,7 +68,7 @@ class TellinkRepairFlow(RepairsFlow):
                     )
             except TimeoutError:
                 errors["base"] = "cannot_connect"
-            except Exception:  # noqa: BLE001
+            except Exception:
                 _LOGGER.exception("Unexpected error during Tellink repairs reauth")
                 errors["base"] = "unknown"
 

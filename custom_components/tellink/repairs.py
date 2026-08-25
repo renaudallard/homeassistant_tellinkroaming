@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
-import voluptuous as vol
 
+import voluptuous as vol
+from homeassistant.components.repairs import RepairsFlow
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.selector import (
@@ -12,10 +13,9 @@ from homeassistant.helpers.selector import (
     TextSelectorConfig,
     TextSelectorType,
 )
-from homeassistant.components.repairs import RepairsFlow
 
-from .const import DOMAIN
 from .api import TellinkAPI
+from .const import DOMAIN
 from .credentials import get_credential_store
 
 _LOGGER = logging.getLogger(__name__)

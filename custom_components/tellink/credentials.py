@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 

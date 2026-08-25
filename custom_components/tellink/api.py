@@ -5,13 +5,11 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from datetime import datetime
-
 import ssl
+from datetime import datetime
 
 import websockets
 from websockets.exceptions import ConnectionClosedError, WebSocketException
-
 
 SSL_CONTEXT = ssl.create_default_context()
 

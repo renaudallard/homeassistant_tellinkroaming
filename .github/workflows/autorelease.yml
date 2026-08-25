@@ -24,14 +24,31 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Read versions (new vs previous commit)
+      - name: Read versions (new vs before this push)
         id: versions
+        env:
+          BEFORE: ${{ github.event.before }}
         run: |
           set -e
-          NEW=$(jq -r '.version' custom_components/tellink/manifest.json)
-          OLD=$(git show HEAD^:custom_components/tellink/manifest.json 2>/dev/null | jq -r '.version' || echo "")
+          MANIFEST=custom_components/tellink/manifest.json
+          NEW=$(jq -r '.version' "$MANIFEST")
+
+          # Compare against where the branch was before this push, not against
+          # the parent of the tip. A push whose version bump is not the last
+          # commit would otherwise look unchanged and never get released.
+          # Falls back to the parent for workflow_dispatch and for a new branch.
+          BASE="$BEFORE"
+          case "$BASE" in
+            ""|0000000000000000000000000000000000000000) BASE="HEAD^" ;;
+          esac
+          git rev-parse --verify --quiet "$BASE^{commit}" >/dev/null || BASE="HEAD^"
+
+          OLD=$(git show "$BASE:$MANIFEST" 2>/dev/null | jq -r '.version' 2>/dev/null || echo "")
+          [ "$OLD" = "null" ] && OLD=""
+
           echo "new=$NEW" >> "$GITHUB_OUTPUT"
           echo "old=$OLD" >> "$GITHUB_OUTPUT"
+          echo "Comparing against: $BASE"
           echo "New version: $NEW"
           echo "Old version: $OLD"
 

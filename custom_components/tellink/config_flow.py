@@ -118,7 +118,15 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ir.async_delete_issue(
                     self.hass, DOMAIN, reauth_issue_id(self._reauth_entry.entry_id)
                 )
-                # Finish reauth successfully
+
+                # The password lives in private storage, so nothing on the entry
+                # changes and neither the update listener nor Home Assistant will
+                # reload it on their own. Ask for the reload explicitly, or the
+                # entry stays in SETUP_ERROR, which has no retry timer, and a
+                # loaded entry keeps using the old password.
+                self.hass.config_entries.async_schedule_reload(
+                    self._reauth_entry.entry_id
+                )
                 return self.async_abort(reason="reauth_successful")
             except TellinkConnectionError:
                 errors["base"] = "cannot_connect"

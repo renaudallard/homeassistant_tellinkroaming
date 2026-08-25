@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
@@ -17,14 +17,14 @@ class CredentialStore:
     def __init__(self, hass: HomeAssistant) -> None:
         self._hass = hass
         self._store = Store(hass, STORAGE_VERSION, STORAGE_KEY, private=True)
-        self._cache: Dict[str, Dict[str, Any]] | None = None
+        self._cache: dict[str, dict[str, Any]] | None = None
 
-    async def _ensure_loaded(self) -> Dict[str, Dict[str, Any]]:
+    async def _ensure_loaded(self) -> dict[str, dict[str, Any]]:
         if self._cache is None:
             self._cache = await self._store.async_load() or {}
         return self._cache
 
-    async def async_get(self, entry_id: str) -> Optional[Dict[str, Any]]:
+    async def async_get(self, entry_id: str) -> dict[str, Any] | None:
         data = await self._ensure_loaded()
         return data.get(entry_id)
 

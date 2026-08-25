@@ -5,7 +5,11 @@ from __future__ import annotations
 import logging
 from datetime import date, datetime
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -76,6 +80,7 @@ class TellinkBalanceSensor(BaseTellinkSensor):
     """Representation of the Tellink prepaid balance sensor."""
 
     _attr_native_unit_of_measurement = "€"
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, coordinator, username):
         super().__init__(coordinator, username, "Balance", "mdi:sim")

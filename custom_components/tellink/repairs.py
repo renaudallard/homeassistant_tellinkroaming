@@ -16,7 +16,7 @@ from homeassistant.helpers.selector import (
 
 from .api import TellinkAPI, TellinkAuthError, TellinkConnectionError
 from .const import DOMAIN
-from .credentials import get_credential_store
+from .credentials import credential_key, get_credential_store
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,14 +48,21 @@ class TellinkRepairFlow(RepairsFlow):
                 await api.get_data()
 
                 # Save into private credential store
+                entry = self.hass.config_entries.async_get_entry(self._entry_id)
+                if not entry:
+                    _LOGGER.error(
+                        "Repairs flow: config entry %s is gone", self._entry_id
+                    )
+                    return self.async_abort(reason="unknown")
+
                 cred_store = get_credential_store(self.hass)
-                await cred_store.async_save(self._entry_id, self._username, password)
+                await cred_store.async_save(
+                    credential_key(entry), self._username, password
+                )
 
                 # Clear the issue and reload the entry
                 ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
-                entry = self.hass.config_entries.async_get_entry(self._entry_id)
-                if entry:
-                    await self.hass.config_entries.async_reload(self._entry_id)
+                await self.hass.config_entries.async_reload(self._entry_id)
 
                 return self.async_create_entry(
                     title="Reauthentication successful", data={}

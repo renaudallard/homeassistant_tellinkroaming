@@ -13,7 +13,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .api import TellinkAPI, TellinkAuthError, TellinkError
 from .const import DOMAIN, reauth_issue_id
-from .credentials import get_credential_store
+from .credentials import CredentialStore, credential_key, get_credential_store
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,22 +56,47 @@ def _delete_reauth_issue(hass: HomeAssistant, entry: ConfigEntry) -> None:
 # ----------------------------------------------------------------------
 
 
+async def _async_stored_password(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    cred_store: CredentialStore,
+    username: str | None,
+) -> str | None:
+    """Return the stored password, moving older placements to the current key.
+
+    Earlier versions keyed the store by entry id, and before that left the
+    password in the entry data, which Home Assistant writes to a world
+    readable file. Either is moved into private storage on first sight.
+    """
+    key = credential_key(entry)
+
+    cred = await cred_store.async_get(key)
+    if cred:
+        return cred.get("password")
+
+    legacy = await cred_store.async_get(entry.entry_id)
+    password = legacy.get("password") if legacy else entry.data.get("password")
+    if not username or not password:
+        return None
+
+    await cred_store.async_save(key, username, password)
+    if legacy and key != entry.entry_id:
+        await cred_store.async_delete(entry.entry_id)
+    if entry.data.get("password") is not None:
+        hass.config_entries.async_update_entry(
+            entry, data={k: v for k, v in entry.data.items() if k != "password"}
+        )
+        _LOGGER.debug("[%s] Password moved out of the config entry", username)
+
+    return password
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Tellink integration from a config entry."""
     username = entry.data.get("username")
 
     cred_store = get_credential_store(hass)
-    cred = await cred_store.async_get(entry.entry_id)
-    password = cred.get("password") if cred else entry.data.get("password")
-
-    # Opportunistic migration (if the migration step hasn't run yet)
-    if username and entry.data.get("password"):
-        await cred_store.async_save(entry.entry_id, username, entry.data["password"])
-        hass.config_entries.async_update_entry(
-            entry,
-            data={**entry.data, "password": None},
-            version=max(entry.version, 4),
-        )
+    password = await _async_stored_password(hass, entry, cred_store, username)
 
     # If creds are missing or corrupt, open a Repairs issue and trigger reauth.
     # ConfigEntryAuthFailed makes Home Assistant start the reauth flow itself.
@@ -146,6 +171,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Clean up credentials when an entry is removed."""
     cred_store = get_credential_store(hass)
+    await cred_store.async_delete(credential_key(entry))
     await cred_store.async_delete(entry.entry_id)
     _LOGGER.debug("[%s] Removed stored credentials", entry.data.get("username"))
 
@@ -192,7 +218,9 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
         cred_store = get_credential_store(hass)
         pwd = data.pop("password", None)
         if data.get("username") and pwd:
-            await cred_store.async_save(config_entry.entry_id, data["username"], pwd)
+            await cred_store.async_save(
+                credential_key(config_entry), data["username"], pwd
+            )
             _LOGGER.debug("[%s] Password moved to private storage", username)
         else:
             # No password found to migrate; create a Repair issue so user can reauth

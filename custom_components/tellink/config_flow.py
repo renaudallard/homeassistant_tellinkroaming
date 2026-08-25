@@ -11,7 +11,7 @@ from homeassistant.helpers import issue_registry as ir
 
 from .api import TellinkAPI, TellinkAuthError, TellinkConnectionError
 from .const import DOMAIN, reauth_issue_id
-from .credentials import get_credential_store
+from .credentials import credential_key, get_credential_store
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,10 +48,13 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(username.lower())
                 self._abort_if_unique_id_configured()
 
-                # Store password temporarily; migration will move it to private storage (v4)
+                # Straight into private storage; the entry data never sees it.
+                cred_store = get_credential_store(self.hass)
+                await cred_store.async_save(username.lower(), username, password)
+
                 return self.async_create_entry(
                     title=f"Tellink ({username})",
-                    data={"username": username, "password": password},
+                    data={"username": username},
                     options={"scan_interval": 3600, "retry_interval": 3600},
                 )
 
@@ -106,7 +109,7 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 # Save to private credential store and clear the Repairs issue
                 cred_store = get_credential_store(self.hass)
                 await cred_store.async_save(
-                    self._reauth_entry.entry_id, username, password
+                    credential_key(self._reauth_entry), username, password
                 )
                 ir.async_delete_issue(
                     self.hass, DOMAIN, reauth_issue_id(self._reauth_entry.entry_id)

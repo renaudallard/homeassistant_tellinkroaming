@@ -4,11 +4,22 @@ from __future__ import annotations
 
 from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
 STORAGE_VERSION = 1
 STORAGE_KEY = "tellink_credentials"
+
+
+def credential_key(entry: ConfigEntry) -> str:
+    """Return the credential store key for a config entry.
+
+    The unique id is the lowercased username, which the config flow knows
+    before the entry exists; that is what lets the password go straight into
+    private storage instead of through the entry data.
+    """
+    return entry.unique_id or entry.entry_id
 
 
 class CredentialStore:

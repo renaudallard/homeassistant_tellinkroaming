@@ -87,18 +87,29 @@ issue, so with several accounts you can tell which one needs attention.
 
 ## Sensors
 
-Every sensor name ends with the account username, so the entity ids do too.
-For the account `9189007815` they are:
+The four sensors are grouped under one device per account, named
+**Tellink (your username)**. Each sensor names only itself, so they show up as
+**Tellink (9189007815) Balance**, **... Status**, and so on.
 
-| Sensor                                  | Description               | Device Class | Example       |
-|-----------------------------------------|---------------------------|--------------|---------------|
-| `sensor.tellink_balance_9189007815`     | Current credit amount (€) | None         | `6.75`        |
-| `sensor.tellink_status_9189007815`      | SIM status                | None         | `Active`      |
-| `sensor.tellink_username_9189007815`    | Tellink username          | None         | `9189007815`  |
-| `sensor.tellink_expiry_9189007815`      | Validity expiry date      | Date         | `2037-12-31`  |
+| Sensor      | Description               | Device Class | Example       |
+|-------------|---------------------------|--------------|---------------|
+| Balance     | Current credit amount (€) | None         | `6.75`        |
+| Status      | SIM status                | None         | `Active`      |
+| Username    | Tellink username          | None         | `9189007815`  |
+| Expiry      | Validity expiry date      | Date         | `2037-12-31`  |
 
-Substitute your own username. The sensors are grouped under one device per
-account, so **Settings > Devices & Services > Tellink** lists them together.
+### Entity ids
+
+Entity ids are assigned once, when a sensor is first seen, and never change
+afterwards. Which ones you have depends on when you installed:
+
+- Upgraded from 1.4.0 or earlier: `sensor.tellink_balance_9189007815` and so
+  on, with your username on the end. These are kept as they are.
+- Installed fresh from 1.4.1 onward: derived from the device and sensor names,
+  so `sensor.tellink_9189007815_balance` and so on.
+
+Check **Settings > Devices & Services > Tellink** for the ids on your own
+system before writing automations against them.
 
 ### Balance status icons
 
@@ -120,7 +131,7 @@ the icon. The attribute is empty while the balance is unknown.
 alias: Tellink low credit alert
 trigger:
   - platform: numeric_state
-    entity_id: sensor.tellink_balance_9189007815
+    entity_id: sensor.tellink_balance_9189007815  # check yours first
     below: 2
 action:
   - service: notify.mobile_app_yourdevice

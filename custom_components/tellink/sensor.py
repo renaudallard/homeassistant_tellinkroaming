@@ -51,10 +51,14 @@ async def async_setup_entry(
 class BaseTellinkSensor(CoordinatorEntity, SensorEntity):
     """Base class for Tellink sensors."""
 
+    # The device already carries the Tellink name and the account, so each
+    # entity only needs to name itself.
+    _attr_has_entity_name = True
+
     def __init__(self, coordinator, username: str, sensor_type: str, icon: str):
         super().__init__(coordinator)
         self._username = username
-        self._attr_name = f"Tellink {sensor_type} ({username})"
+        self._attr_name = sensor_type
         self._attr_unique_id = f"tellink_{sensor_type.lower()}_{username}"
         self._attr_icon = icon
         self._attr_device_info = DeviceInfo(

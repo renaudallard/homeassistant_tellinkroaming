@@ -21,7 +21,11 @@ class CredentialStore:
 
     async def _ensure_loaded(self) -> dict[str, dict[str, Any]]:
         if self._cache is None:
-            self._cache = await self._store.async_load() or {}
+            loaded = await self._store.async_load() or {}
+            # Another entry may have populated the cache while we were waiting on
+            # the store; keep its dict so concurrent saves do not lose each other.
+            if self._cache is None:
+                self._cache = loaded
         return self._cache
 
     async def async_get(self, entry_id: str) -> dict[str, Any] | None:

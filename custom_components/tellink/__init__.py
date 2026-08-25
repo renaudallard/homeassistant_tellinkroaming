@@ -126,6 +126,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
 
+    # Reload when the user changes the intervals in the options flow.
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
     _LOGGER.info("[%s] Tellink integration successfully initialized", username)
     return True
 
@@ -149,10 +152,8 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Reload Tellink config entry when options are updated."""
-    username = entry.data.get("username")
-    _LOGGER.debug("Reloading Tellink config entry for %s", username)
-    await async_unload_entry(hass, entry)
-    await async_setup_entry(hass, entry)
+    _LOGGER.debug("Reloading Tellink config entry for %s", entry.data.get("username"))
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 # ----------------------------------------------------------------------

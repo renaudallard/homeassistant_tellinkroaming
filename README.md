@@ -23,9 +23,9 @@
 - **Balance** sensor (€) with low-balance status icons
 - **Username**, **SIM status**, and **Expiry date** sensors
 - Multiple accounts support
-- Secure credentials stored in private HA storage (auto-migrated from older entries)
+- Passwords kept only in private HA storage, never in the config entry data
 - Repairs issue with a **Fix** button for reauthentication
-- Configurable update and retry intervals
+- Configurable update and retry intervals, applied without a restart
 - Low credit alert automation example
 - Web-based configuration UI
 
@@ -68,26 +68,37 @@ When adding the integration:
 You can configure update and retry intervals under:
 **Settings > Devices & Services > Tellink > Configure**
 
-| Option            | Default |
-|-------------------|---------|
-| Update interval   | 3600 s  |
-| Retry interval    | 3600 s  |
+| Option            | Default | Range            |
+|-------------------|---------|------------------|
+| Update interval   | 3600 s  | 60 to 86400 s    |
+| Retry interval    | 3600 s  | 60 to 86400 s    |
+
+Changing either value reloads the integration straight away; no restart needed.
 
 ### Reauthentication
 
-If credentials become invalid, a **Tellink needs reauthentication** issue appears in **Settings > Repairs**.
-Click **Fix**, enter the new password, and the integration will validate, store, and reload automatically.
+If the portal stops accepting your credentials, Home Assistant asks you to
+reauthenticate on the integration page, and a **Tellink needs reauthentication**
+issue appears in **Settings > Repairs**. Either route asks for the new password,
+validates it, stores it and reloads the integration. Each account gets its own
+issue, so with several accounts you can tell which one needs attention.
 
 ---
 
 ## Sensors
 
-| Sensor                     | Description               | Device Class | Example       |
-|----------------------------|---------------------------|--------------|---------------|
-| `sensor.tellink_balance`   | Current credit amount (€) | None         | `6.75`        |
-| `sensor.tellink_status`    | SIM status                | None         | `Active`      |
-| `sensor.tellink_username`  | Tellink username           | None         | `9189007815`  |
-| `sensor.tellink_expiry`    | Validity expiry date      | Date         | `2037-12-31`  |
+Every sensor name ends with the account username, so the entity ids do too.
+For the account `9189007815` they are:
+
+| Sensor                                  | Description               | Device Class | Example       |
+|-----------------------------------------|---------------------------|--------------|---------------|
+| `sensor.tellink_balance_9189007815`     | Current credit amount (€) | None         | `6.75`        |
+| `sensor.tellink_status_9189007815`      | SIM status                | None         | `Active`      |
+| `sensor.tellink_username_9189007815`    | Tellink username          | None         | `9189007815`  |
+| `sensor.tellink_expiry_9189007815`      | Validity expiry date      | Date         | `2037-12-31`  |
+
+Substitute your own username. The sensors are grouped under one device per
+account, so **Settings > Devices & Services > Tellink** lists them together.
 
 ### Balance status icons
 
@@ -109,7 +120,7 @@ the icon. The attribute is empty while the balance is unknown.
 alias: Tellink low credit alert
 trigger:
   - platform: numeric_state
-    entity_id: sensor.tellink_balance
+    entity_id: sensor.tellink_balance_9189007815
     below: 2
 action:
   - service: notify.mobile_app_yourdevice
@@ -126,4 +137,5 @@ mode: single
 - Domain: **`tellink`**
 - Uses **DataUpdateCoordinator**; sensors do not call the API directly
 - Expiry returns a proper `date` (HA 2025+ requirement)
+- Balance is recorded as a measurement, so long term statistics are kept
 - Brand images (icon and logo) included for HA 2026.3+ UI display

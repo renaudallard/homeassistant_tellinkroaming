@@ -2,7 +2,7 @@
   "domain": "tellink",
   "name": "Tellink Prepaid",
   "version": "1.4.1",
-  "documentation": "https://www.mytellink.com/prepaid",
+  "documentation": "https://github.com/renaudallard/homeassistant_tellinkroaming",
   "issue_tracker": "https://github.com/renaudallard/homeassistant_tellinkroaming/issues",
   "requirements": [
     "websockets>=12.0"

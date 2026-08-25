@@ -131,6 +131,12 @@ mode: single
 
 ---
 
+## License
+
+BSD 2-Clause. See [LICENSE](LICENSE).
+
+---
+
 ## Notes
 
 - Compatible with **Home Assistant 2025.10+**

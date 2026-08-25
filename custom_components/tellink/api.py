@@ -15,6 +15,12 @@ SSL_CONTEXT = ssl.create_default_context()
 
 _LOGGER = logging.getLogger(__name__)
 
+# websockets logs every frame it sends at DEBUG, payload included, and the
+# credentials frame carries the password in clear. Hand the connection a
+# logger that will not emit it whatever the rest of the tree is set to.
+_WS_LOGGER = logging.getLogger(f"{__name__}.websocket")
+_WS_LOGGER.setLevel(logging.INFO)
+
 
 class TellinkError(Exception):
     """Base error for the Tellink portal."""
@@ -69,6 +75,7 @@ class TellinkAPI:
                 max_size=2**20,
                 ping_interval=None,
                 close_timeout=5,
+                logger=_WS_LOGGER,
             ) as ws:
                 # Wait for Challenge
                 try:

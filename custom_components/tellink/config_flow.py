@@ -9,14 +9,10 @@ from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
 
 from .api import TellinkAPI, TellinkAuthError, TellinkConnectionError
-from .const import DOMAIN
+from .const import DEFAULT_INTERVAL, DOMAIN, MAX_INTERVAL, MIN_INTERVAL
 from .credentials import credential_key, get_credential_store
 
 _LOGGER = logging.getLogger(__name__)
-
-# A zero or negative interval turns the coordinator into a busy loop.
-MIN_INTERVAL = 60
-MAX_INTERVAL = 86400
 
 
 class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -58,7 +54,10 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return self.async_create_entry(
                     title=f"Tellink ({username})",
                     data={"username": username},
-                    options={"scan_interval": 3600, "retry_interval": 3600},
+                    options={
+                        "scan_interval": DEFAULT_INTERVAL,
+                        "retry_interval": DEFAULT_INTERVAL,
+                    },
                 )
 
         data_schema = vol.Schema(
@@ -164,10 +163,12 @@ class TellinkOptionsFlowHandler(config_entries.OptionsFlow):
         schema = vol.Schema(
             {
                 vol.Required(
-                    "scan_interval", default=current.get("scan_interval", 3600)
+                    "scan_interval",
+                    default=current.get("scan_interval", DEFAULT_INTERVAL),
                 ): vol.All(int, vol.Range(min=MIN_INTERVAL, max=MAX_INTERVAL)),
                 vol.Required(
-                    "retry_interval", default=current.get("retry_interval", 3600)
+                    "retry_interval",
+                    default=current.get("retry_interval", DEFAULT_INTERVAL),
                 ): vol.All(int, vol.Range(min=MIN_INTERVAL, max=MAX_INTERVAL)),
             }
         )

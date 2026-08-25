@@ -11,7 +11,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import TellinkAPI, TellinkAuthError, TellinkError
-from .const import DOMAIN
+from .const import DEFAULT_INTERVAL, DOMAIN, MAX_INTERVAL, MIN_INTERVAL
 from .credentials import CredentialStore, credential_key, get_credential_store
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,6 +20,20 @@ _LOGGER = logging.getLogger(__name__)
 # ----------------------------------------------------------------------
 # Setup / Teardown
 # ----------------------------------------------------------------------
+
+
+def _interval(seconds: object) -> timedelta:
+    """Return a sane polling interval for a value read from the options.
+
+    The options flow rejects anything outside the allowed range, but entries
+    saved by an older version can still hold a zero, which would turn the
+    coordinator into a busy loop against the portal.
+    """
+    try:
+        value = int(seconds)  # type: ignore[call-overload]
+    except (TypeError, ValueError):
+        value = DEFAULT_INTERVAL
+    return timedelta(seconds=min(max(value, MIN_INTERVAL), MAX_INTERVAL))
 
 
 async def _async_stored_password(
@@ -72,8 +86,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     api = TellinkAPI(username, password)
 
-    scan_interval = timedelta(seconds=entry.options.get("scan_interval", 3600))
-    retry_interval = timedelta(seconds=entry.options.get("retry_interval", 3600))
+    scan_interval = _interval(entry.options.get("scan_interval"))
+    retry_interval = _interval(entry.options.get("retry_interval"))
 
     async def async_update_data():
         """Fetch data from Tellink with retry/backoff logic."""

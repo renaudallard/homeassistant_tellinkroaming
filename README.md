@@ -24,7 +24,7 @@
 - **Username**, **SIM status**, and **Expiry date** sensors
 - Multiple accounts support
 - Passwords kept only in private HA storage, never in the config entry data
-- Repairs issue with a **Fix** button for reauthentication
+- Reauthentication prompt when the portal stops accepting a password
 - Configurable update and retry intervals, applied without a restart
 - Low credit alert automation example
 - Web-based configuration UI
@@ -77,11 +77,12 @@ Changing either value reloads the integration straight away; no restart needed.
 
 ### Reauthentication
 
-If the portal stops accepting your credentials, Home Assistant asks you to
-reauthenticate on the integration page, and a **Tellink needs reauthentication**
-issue appears in **Settings > Repairs**. Either route asks for the new password,
-validates it, stores it and reloads the integration. Each account gets its own
-issue, so with several accounts you can tell which one needs attention.
+If the portal stops accepting your credentials, Home Assistant raises its own
+**reauthentication** notice for that account, on the integration page and in
+**Settings > Repairs**. Opening it asks for the new password, validates it
+against the portal, stores it and reloads the integration. Each account is
+handled separately, so with several accounts you can tell which one needs
+attention.
 
 ---
 

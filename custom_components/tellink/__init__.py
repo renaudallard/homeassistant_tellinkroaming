@@ -8,47 +8,13 @@ from datetime import timedelta
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import TellinkAPI, TellinkAuthError, TellinkError
-from .const import DOMAIN, reauth_issue_id
+from .const import DOMAIN
 from .credentials import CredentialStore, credential_key, get_credential_store
 
 _LOGGER = logging.getLogger(__name__)
-
-
-# ----------------------------------------------------------------------
-# Helpers: Repairs (issue registry)
-# ----------------------------------------------------------------------
-
-
-def _create_reauth_issue(
-    hass: HomeAssistant, entry: ConfigEntry, username: str | None
-) -> None:
-    """Create a Repairs issue to guide the user to reauthenticate (with Fix button)."""
-    ir.async_create_issue(
-        hass,
-        DOMAIN,
-        reauth_issue_id(entry.entry_id),
-        is_fixable=True,
-        severity=ir.IssueSeverity.ERROR,
-        translation_key="reauth_required",
-        translation_placeholders={
-            "entry_title": entry.title or "Tellink",
-            "username": username or "unknown",
-        },
-        # This 'data' block is passed to our repairs fix flow so we know which entry to fix
-        data={"entry_id": entry.entry_id, "username": username or "unknown"},
-        learn_more_url="https://my.home-assistant.io/redirect/config_flow_start?domain=tellink",
-    )
-
-
-def _delete_reauth_issue(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Delete this entry's reauth issue if it exists."""
-    ir.async_delete_issue(hass, DOMAIN, reauth_issue_id(entry.entry_id))
-    # Issues from before the id carried the entry id; harmless if absent.
-    ir.async_delete_issue(hass, DOMAIN, "reauth_required")
 
 
 # ----------------------------------------------------------------------
@@ -102,11 +68,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # ConfigEntryAuthFailed makes Home Assistant start the reauth flow itself.
     if not username or not password:
         _LOGGER.error("[%s] Missing/corrupt Tellink credentials", username or "unknown")
-        _create_reauth_issue(hass, entry, username)
         raise ConfigEntryAuthFailed("Missing credentials")
-
-    # Credentials are present; ensure any old issue is cleared
-    _delete_reauth_issue(hass, entry)
 
     api = TellinkAPI(username, password)
 
@@ -173,7 +135,6 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     cred_store = get_credential_store(hass)
     await cred_store.async_delete(credential_key(entry))
     await cred_store.async_delete(entry.entry_id)
-    _delete_reauth_issue(hass, entry)
     _LOGGER.debug("[%s] Removed stored credentials", entry.data.get("username"))
 
 
@@ -223,9 +184,8 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
                 credential_key(config_entry), data["username"], pwd
             )
             _LOGGER.debug("[%s] Password moved to private storage", username)
-        else:
-            # No password found to migrate; create a Repair issue so user can reauth
-            _create_reauth_issue(hass, config_entry, data.get("username"))
+        # Nothing to migrate means setup will raise ConfigEntryAuthFailed and
+        # Home Assistant will ask for the password itself.
         new_version = 4
 
     if new_version != current_version:

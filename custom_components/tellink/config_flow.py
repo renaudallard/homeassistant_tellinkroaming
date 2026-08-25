@@ -7,10 +7,9 @@ import logging
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.helpers import issue_registry as ir
 
 from .api import TellinkAPI, TellinkAuthError, TellinkConnectionError
-from .const import DOMAIN, reauth_issue_id
+from .const import DOMAIN
 from .credentials import credential_key, get_credential_store
 
 _LOGGER = logging.getLogger(__name__)
@@ -110,15 +109,11 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
                 await api.get_data()
 
-                # Save to private credential store and clear the Repairs issue
+                # Save to private credential store
                 cred_store = get_credential_store(self.hass)
                 await cred_store.async_save(
                     credential_key(self._reauth_entry), username, password
                 )
-                ir.async_delete_issue(
-                    self.hass, DOMAIN, reauth_issue_id(self._reauth_entry.entry_id)
-                )
-
                 # The password lives in private storage, so nothing on the entry
                 # changes and neither the update listener nor Home Assistant will
                 # reload it on their own. Ask for the reload explicitly, or the

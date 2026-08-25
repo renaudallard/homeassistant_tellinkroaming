@@ -69,29 +69,44 @@ class TellinkBalanceSensor(BaseTellinkSensor):
     _attr_native_unit_of_measurement = "€"
 
     def __init__(self, coordinator, username):
-        super().__init__(coordinator, username, "Balance", "mdi:sim-outline")
+        super().__init__(coordinator, username, "Balance", "mdi:sim")
 
     @property
     def native_value(self):
         """Return the current balance."""
         return self.data.get("balance")
 
-    @property
-    def icon(self) -> str | None:
-        """Return an icon that reflects the balance level."""
+    def _severity(self) -> str | None:
+        """Return the balance severity, or None when the balance is unknown."""
         balance = self.data.get("balance")
         if balance is None:
-            return "mdi:sim-outline"
+            return None
 
         try:
             balance = float(balance)
         except (TypeError, ValueError):
-            return "mdi:sim-outline"
+            return None
 
         if balance < 2:
-            return "mdi:sim-alert-outline"
+            return "critical"
+        if balance < 4:
+            return "warning"
+        return "normal"
 
-        return "mdi:sim-outline"
+    @property
+    def icon(self) -> str:
+        """Return an icon that reflects the balance level."""
+        severity = self._severity()
+        if severity == "critical":
+            return "mdi:sim-alert"
+        if severity == "warning":
+            return "mdi:sim-off"
+        return "mdi:sim"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | None]:
+        """Expose the balance severity so automations can key off it."""
+        return {"balance_state": self._severity()}
 
 
 class TellinkStatusSensor(BaseTellinkSensor):

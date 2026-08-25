@@ -20,7 +20,7 @@
 
 ## Features
 
-- **Balance** sensor (€) with low-balance alert icon (below €2)
+- **Balance** sensor (€) with low-balance status icons
 - **Username**, **SIM status**, and **Expiry date** sensors
 - Multiple accounts support
 - Secure credentials stored in private HA storage (auto-migrated from older entries)
@@ -88,6 +88,18 @@ Click **Fix**, enter the new password, and the integration will validate, store,
 | `sensor.tellink_status`    | SIM status                | None         | `Active`      |
 | `sensor.tellink_username`  | Tellink username           | None         | `9189007815`  |
 | `sensor.tellink_expiry`    | Validity expiry date      | Date         | `2037-12-31`  |
+
+### Balance status icons
+
+The balance sensor changes icon with the remaining credit and exposes the same
+level as a `balance_state` attribute, so automations can react without parsing
+the icon. The attribute is empty while the balance is unknown.
+
+| Balance | Icon | `balance_state` |
+|---------|------|-----------------|
+| `< 2 EUR` | `mdi:sim-alert` | `critical` |
+| `2 - 4 EUR` | `mdi:sim-off` | `warning` |
+| `>= 4 EUR` | `mdi:sim` | `normal` |
 
 ---
 

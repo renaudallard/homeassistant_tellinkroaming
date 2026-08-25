@@ -38,7 +38,15 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 _LOGGER.debug("Validating Tellink credentials for %s", username)
                 await api.get_data()
-
+            except TellinkConnectionError:
+                errors["base"] = "cannot_connect"
+            except TellinkAuthError:
+                errors["base"] = "invalid_auth"
+            except Exception:
+                _LOGGER.exception("Unexpected error validating Tellink credentials")
+                errors["base"] = "unknown"
+            else:
+                # Outside the try: _abort_if_unique_id_configured signals by raising.
                 await self.async_set_unique_id(username.lower())
                 self._abort_if_unique_id_configured()
 
@@ -48,13 +56,6 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data={"username": username, "password": password},
                     options={"scan_interval": 3600, "retry_interval": 3600},
                 )
-            except TellinkConnectionError:
-                errors["base"] = "cannot_connect"
-            except TellinkAuthError:
-                errors["base"] = "invalid_auth"
-            except Exception:
-                _LOGGER.exception("Unexpected error validating Tellink credentials")
-                errors["base"] = "unknown"
 
         data_schema = vol.Schema(
             {

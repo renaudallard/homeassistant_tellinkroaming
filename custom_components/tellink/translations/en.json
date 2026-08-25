@@ -32,7 +32,7 @@
     "step": {
       "init": {
         "title": "Tellink Options",
-        "description": "Configure update intervals for the Tellink integration.",
+        "description": "Configure update intervals for the Tellink integration. Both values are in seconds and must be between 60 and 86400.",
         "data": {
           "scan_interval": "Update interval (seconds)",
           "retry_interval": "Retry interval (seconds)"

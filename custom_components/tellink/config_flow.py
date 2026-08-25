@@ -15,6 +15,10 @@ from .credentials import credential_key, get_credential_store
 
 _LOGGER = logging.getLogger(__name__)
 
+# A zero or negative interval turns the coordinator into a busy loop.
+MIN_INTERVAL = 60
+MAX_INTERVAL = 86400
+
 
 class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle the Tellink config flow."""
@@ -158,10 +162,10 @@ class TellinkOptionsFlowHandler(config_entries.OptionsFlow):
             {
                 vol.Required(
                     "scan_interval", default=current.get("scan_interval", 3600)
-                ): int,
+                ): vol.All(int, vol.Range(min=MIN_INTERVAL, max=MAX_INTERVAL)),
                 vol.Required(
                     "retry_interval", default=current.get("retry_interval", 3600)
-                ): int,
+                ): vol.All(int, vol.Range(min=MIN_INTERVAL, max=MAX_INTERVAL)),
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

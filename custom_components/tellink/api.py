@@ -33,6 +33,9 @@ class TellinkAPI:
 
     URL = "wss://www.mytellink.com/prepaid/"
 
+    # A login is a handful of frames; anything longer is a stuck connection.
+    TOTAL_TIMEOUT = 30
+
     def __init__(self, username: str, password: str):
         self.username = username
         self.password = password
@@ -45,6 +48,16 @@ class TellinkAPI:
         """
         _LOGGER.debug("[%s] Connecting to %s", self.username, self.URL)
 
+        try:
+            async with asyncio.timeout(self.TOTAL_TIMEOUT):
+                return await self._login()
+        except asyncio.TimeoutError as err:
+            raise TellinkConnectionError(
+                f"No session after {self.TOTAL_TIMEOUT} s"
+            ) from err
+
+    async def _login(self) -> dict:
+        """Open the socket, send the credentials and wait for the session."""
         try:
             async with websockets.connect(
                 self.URL,

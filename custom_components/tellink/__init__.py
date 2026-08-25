@@ -163,7 +163,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     username = entry.data.get("username")
     unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
+        hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
         _LOGGER.debug("[%s] Unloaded Tellink integration", username)
     return unload_ok
 
@@ -173,6 +173,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     cred_store = get_credential_store(hass)
     await cred_store.async_delete(credential_key(entry))
     await cred_store.async_delete(entry.entry_id)
+    _delete_reauth_issue(hass, entry)
     _LOGGER.debug("[%s] Removed stored credentials", entry.data.get("username"))
 
 

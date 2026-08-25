@@ -73,8 +73,8 @@ class TellinkAPI:
 
         except (ConnectionClosedError, WebSocketException) as err:
             _LOGGER.error("[%s] WebSocket error: %s", self.username, err)
-        except Exception as err:
-            _LOGGER.exception("[%s] Unexpected error: %s", self.username, err)
+        except Exception:
+            _LOGGER.exception("[%s] Unexpected error", self.username)
 
         _LOGGER.warning("[%s] Did not receive valid SessionCli JSON", self.username)
         return {}
@@ -98,7 +98,7 @@ class TellinkAPI:
                 try:
                     expiry_date = datetime.fromisoformat(expiry).date()
                     expiry_str = expiry_date.isoformat()
-                except Exception:
+                except (TypeError, ValueError):
                     expiry_str = expiry
 
             return {
@@ -107,6 +107,6 @@ class TellinkAPI:
                 "username": username,
                 "expiry": expiry_str,
             }
-        except Exception as err:
+        except (KeyError, TypeError, ValueError) as err:
             _LOGGER.warning("[%s] Error parsing SessionCli: %s", self.username, err)
             return {}

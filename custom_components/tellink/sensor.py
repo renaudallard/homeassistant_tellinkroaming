@@ -154,7 +154,7 @@ class TellinkExpirySensor(BaseTellinkSensor):
 
         try:
             return datetime.fromisoformat(expiry_value).date()
-        except Exception:
+        except (TypeError, ValueError):
             _LOGGER.debug(
                 "[%s] Could not parse expiry value: %s", self._username, expiry_value
             )

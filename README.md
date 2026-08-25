@@ -84,7 +84,7 @@ Click **Fix**, enter the new password, and the integration will validate, store,
 
 | Sensor                     | Description               | Device Class | Example       |
 |----------------------------|---------------------------|--------------|---------------|
-| `sensor.tellink_balance`   | Current credit amount (€) | Monetary     | `6.75`        |
+| `sensor.tellink_balance`   | Current credit amount (€) | None         | `6.75`        |
 | `sensor.tellink_status`    | SIM status                | None         | `Active`      |
 | `sensor.tellink_username`  | Tellink username           | None         | `9189007815`  |
 | `sensor.tellink_expiry`    | Validity expiry date      | Date         | `2037-12-31`  |

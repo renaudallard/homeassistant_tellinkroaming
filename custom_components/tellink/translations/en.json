@@ -43,7 +43,26 @@
   "issues": {
     "reauth_required": {
       "title": "Tellink needs reauthentication",
-      "description": "The Tellink integration \"{entry_title}\" for user **{username}** is missing credentials or they are no longer valid.\n\nClick **Fix** to enter a new password and restore connectivity, or open the Tellink integration from Settings → Devices & Services."
+      "description": "The Tellink integration \"{entry_title}\" for user **{username}** is missing credentials or they are no longer valid.\n\nClick **Fix** to enter a new password and restore connectivity, or open the Tellink integration from Settings → Devices & Services.",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Reauthenticate Tellink",
+            "description": "Enter the current password for **{username}** to restore the connection.",
+            "data": {
+              "password": "Password"
+            }
+          }
+        },
+        "error": {
+          "invalid_auth": "Invalid username or password.",
+          "cannot_connect": "Cannot connect right now.",
+          "unknown": "Unexpected error."
+        },
+        "abort": {
+          "unknown": "An unexpected error occurred. Please try again."
+        }
+      }
     }
   }
 }

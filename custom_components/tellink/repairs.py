@@ -83,7 +83,12 @@ class TellinkRepairFlow(RepairsFlow):
                 )
             }
         )
-        return self.async_show_form(step_id="init", data_schema=schema, errors=errors)
+        return self.async_show_form(
+            step_id="init",
+            data_schema=schema,
+            errors=errors,
+            description_placeholders={"username": self._username or "unknown"},
+        )
 
 
 async def async_create_fix_flow(hass: HomeAssistant, issue_id: str, data: dict | None):

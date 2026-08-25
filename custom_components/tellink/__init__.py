@@ -7,11 +7,11 @@ from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import TellinkAPI
+from .api import TellinkAPI, TellinkAuthError, TellinkError
 from .const import DOMAIN
 from .credentials import get_credential_store
 
@@ -98,7 +98,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         try:
             _LOGGER.debug("[%s] Fetching Tellink data", username)
             data = await api.get_data()
-        except Exception as err:
+        except TellinkAuthError as err:
+            # Ask the user for a new password instead of retrying forever.
+            coordinator.update_interval = retry_interval
+            raise ConfigEntryAuthFailed(str(err)) from err
+        except TellinkError as err:
             _LOGGER.warning(
                 "[%s] Update failed: %s; retrying in %s s",
                 username,
@@ -107,10 +111,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
             coordinator.update_interval = retry_interval
             raise UpdateFailed(err) from err
-
-        if not data:
-            coordinator.update_interval = retry_interval
-            raise UpdateFailed("Empty or invalid data returned from Tellink API")
 
         coordinator.update_interval = scan_interval
         return data

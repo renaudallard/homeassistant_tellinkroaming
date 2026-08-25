@@ -14,7 +14,7 @@ from homeassistant.helpers.selector import (
     TextSelectorType,
 )
 
-from .api import TellinkAPI
+from .api import TellinkAPI, TellinkAuthError, TellinkConnectionError
 from .const import DOMAIN
 from .credentials import get_credential_store
 
@@ -47,27 +47,25 @@ class TellinkRepairFlow(RepairsFlow):
             # Validate credentials via API
             try:
                 api = TellinkAPI(self._username, password)
-                data = await api.get_data()
-                if not data:
-                    errors["base"] = "invalid_auth"
-                else:
-                    # Save into private credential store
-                    cred_store = get_credential_store(self.hass)
-                    await cred_store.async_save(
-                        self._entry_id, self._username, password
-                    )
+                await api.get_data()
 
-                    # Clear the issue and reload the entry
-                    ir.async_delete_issue(self.hass, DOMAIN, ISSUE_ID_REAUTH)
-                    entry = self.hass.config_entries.async_get_entry(self._entry_id)
-                    if entry:
-                        await self.hass.config_entries.async_reload(self._entry_id)
+                # Save into private credential store
+                cred_store = get_credential_store(self.hass)
+                await cred_store.async_save(self._entry_id, self._username, password)
 
-                    return self.async_create_entry(
-                        title="Reauthentication successful", data={}
-                    )
-            except TimeoutError:
+                # Clear the issue and reload the entry
+                ir.async_delete_issue(self.hass, DOMAIN, ISSUE_ID_REAUTH)
+                entry = self.hass.config_entries.async_get_entry(self._entry_id)
+                if entry:
+                    await self.hass.config_entries.async_reload(self._entry_id)
+
+                return self.async_create_entry(
+                    title="Reauthentication successful", data={}
+                )
+            except TellinkConnectionError:
                 errors["base"] = "cannot_connect"
+            except TellinkAuthError:
+                errors["base"] = "invalid_auth"
             except Exception:
                 _LOGGER.exception("Unexpected error during Tellink repairs reauth")
                 errors["base"] = "unknown"

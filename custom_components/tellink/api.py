@@ -16,6 +16,18 @@ SSL_CONTEXT = ssl.create_default_context()
 _LOGGER = logging.getLogger(__name__)
 
 
+class TellinkError(Exception):
+    """Base error for the Tellink portal."""
+
+
+class TellinkConnectionError(TellinkError):
+    """The portal could not be reached."""
+
+
+class TellinkAuthError(TellinkError):
+    """The portal did not return a session for these credentials."""
+
+
 class TellinkAPI:
     """Handle communication with the Tellink prepaid portal via WebSocket."""
 
@@ -26,7 +38,11 @@ class TellinkAPI:
         self.password = password
 
     async def get_data(self) -> dict:
-        """Login through WebSocket and parse the SessionCli JSON."""
+        """Login through WebSocket and parse the SessionCli JSON.
+
+        Raises TellinkConnectionError if the portal cannot be reached and
+        TellinkAuthError if it never returns a session for these credentials.
+        """
         _LOGGER.debug("[%s] Connecting to %s", self.username, self.URL)
 
         try:
@@ -43,9 +59,10 @@ class TellinkAPI:
                     _LOGGER.debug(
                         "[%s] Received challenge: %s", self.username, challenge_msg
                     )
-                except asyncio.TimeoutError:
-                    _LOGGER.warning("[%s] Timeout waiting for challenge", self.username)
-                    return {}
+                except asyncio.TimeoutError as err:
+                    raise TellinkConnectionError(
+                        "Timed out waiting for the challenge"
+                    ) from err
 
                 # Send credentials
                 cred = {
@@ -69,15 +86,16 @@ class TellinkAPI:
                         continue
 
                     if data.get("tag") == "SessionCli":
-                        return self._parse_session_cli(data)
+                        parsed = self._parse_session_cli(data)
+                        if not parsed:
+                            raise TellinkError("Could not parse the SessionCli payload")
+                        return parsed
 
-        except (ConnectionClosedError, WebSocketException) as err:
-            _LOGGER.error("[%s] WebSocket error: %s", self.username, err)
-        except Exception:
-            _LOGGER.exception("[%s] Unexpected error", self.username)
+        except (ConnectionClosedError, WebSocketException, OSError) as err:
+            raise TellinkConnectionError(str(err) or type(err).__name__) from err
 
-        _LOGGER.warning("[%s] Did not receive valid SessionCli JSON", self.username)
-        return {}
+        # Connected and sent the credentials, but the portal never sent a session.
+        raise TellinkAuthError("No session returned; the credentials were refused")
 
     def _parse_session_cli(self, data: dict) -> dict:
         """Extract balance, status, username, and expiry info."""

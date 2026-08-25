@@ -9,7 +9,7 @@ from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import issue_registry as ir
 
-from .api import TellinkAPI
+from .api import TellinkAPI, TellinkAuthError, TellinkConnectionError
 from .const import DOMAIN
 from .credentials import get_credential_store
 
@@ -37,21 +37,21 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             try:
                 _LOGGER.debug("Validating Tellink credentials for %s", username)
-                data = await api.get_data()
-                if not data:
-                    errors["base"] = "invalid_auth"
-                else:
-                    await self.async_set_unique_id(username.lower())
-                    self._abort_if_unique_id_configured()
+                await api.get_data()
 
-                    # Store password temporarily; migration will move it to private storage (v4)
-                    return self.async_create_entry(
-                        title=f"Tellink ({username})",
-                        data={"username": username, "password": password},
-                        options={"scan_interval": 3600, "retry_interval": 3600},
-                    )
-            except TimeoutError:
+                await self.async_set_unique_id(username.lower())
+                self._abort_if_unique_id_configured()
+
+                # Store password temporarily; migration will move it to private storage (v4)
+                return self.async_create_entry(
+                    title=f"Tellink ({username})",
+                    data={"username": username, "password": password},
+                    options={"scan_interval": 3600, "retry_interval": 3600},
+                )
+            except TellinkConnectionError:
                 errors["base"] = "cannot_connect"
+            except TellinkAuthError:
+                errors["base"] = "invalid_auth"
             except Exception:
                 _LOGGER.exception("Unexpected error validating Tellink credentials")
                 errors["base"] = "unknown"
@@ -102,20 +102,20 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.debug(
                     "Validating Tellink credentials during reauth for %s", username
                 )
-                data = await api.get_data()
-                if not data:
-                    errors["base"] = "invalid_auth"
-                else:
-                    # Save to private credential store and clear the Repairs issue
-                    cred_store = get_credential_store(self.hass)
-                    await cred_store.async_save(
-                        self._reauth_entry.entry_id, username, password
-                    )
-                    ir.async_delete_issue(self.hass, DOMAIN, ISSUE_ID_REAUTH)
-                    # Finish reauth successfully
-                    return self.async_abort(reason="reauth_successful")
-            except TimeoutError:
+                await api.get_data()
+
+                # Save to private credential store and clear the Repairs issue
+                cred_store = get_credential_store(self.hass)
+                await cred_store.async_save(
+                    self._reauth_entry.entry_id, username, password
+                )
+                ir.async_delete_issue(self.hass, DOMAIN, ISSUE_ID_REAUTH)
+                # Finish reauth successfully
+                return self.async_abort(reason="reauth_successful")
+            except TellinkConnectionError:
                 errors["base"] = "cannot_connect"
+            except TellinkAuthError:
+                errors["base"] = "invalid_auth"
             except Exception:
                 _LOGGER.exception("Unexpected error during reauth")
                 errors["base"] = "unknown"

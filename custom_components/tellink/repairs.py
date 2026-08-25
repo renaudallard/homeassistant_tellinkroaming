@@ -20,8 +20,6 @@ from .credentials import get_credential_store
 
 _LOGGER = logging.getLogger(__name__)
 
-ISSUE_ID_REAUTH = "reauth_required"
-
 
 class TellinkRepairFlow(RepairsFlow):
     """Repairs flow to reauthenticate Tellink credentials."""
@@ -54,7 +52,7 @@ class TellinkRepairFlow(RepairsFlow):
                 await cred_store.async_save(self._entry_id, self._username, password)
 
                 # Clear the issue and reload the entry
-                ir.async_delete_issue(self.hass, DOMAIN, ISSUE_ID_REAUTH)
+                ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
                 entry = self.hass.config_entries.async_get_entry(self._entry_id)
                 if entry:
                     await self.hass.config_entries.async_reload(self._entry_id)

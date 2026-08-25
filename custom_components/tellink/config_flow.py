@@ -10,12 +10,10 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import issue_registry as ir
 
 from .api import TellinkAPI, TellinkAuthError, TellinkConnectionError
-from .const import DOMAIN
+from .const import DOMAIN, reauth_issue_id
 from .credentials import get_credential_store
 
 _LOGGER = logging.getLogger(__name__)
-
-ISSUE_ID_REAUTH = "reauth_required"
 
 
 class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -110,7 +108,9 @@ class TellinkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await cred_store.async_save(
                     self._reauth_entry.entry_id, username, password
                 )
-                ir.async_delete_issue(self.hass, DOMAIN, ISSUE_ID_REAUTH)
+                ir.async_delete_issue(
+                    self.hass, DOMAIN, reauth_issue_id(self._reauth_entry.entry_id)
+                )
                 # Finish reauth successfully
                 return self.async_abort(reason="reauth_successful")
             except TellinkConnectionError:

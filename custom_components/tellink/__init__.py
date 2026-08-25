@@ -12,12 +12,10 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import TellinkAPI, TellinkAuthError, TellinkError
-from .const import DOMAIN
+from .const import DOMAIN, reauth_issue_id
 from .credentials import get_credential_store
 
 _LOGGER = logging.getLogger(__name__)
-
-ISSUE_ID_REAUTH = "reauth_required"
 
 
 # ----------------------------------------------------------------------
@@ -32,7 +30,7 @@ def _create_reauth_issue(
     ir.async_create_issue(
         hass,
         DOMAIN,
-        ISSUE_ID_REAUTH,
+        reauth_issue_id(entry.entry_id),
         is_fixable=True,
         severity=ir.IssueSeverity.ERROR,
         translation_key="reauth_required",
@@ -46,9 +44,11 @@ def _create_reauth_issue(
     )
 
 
-def _delete_reauth_issue(hass: HomeAssistant) -> None:
-    """Delete the reauth issue if it exists."""
-    ir.async_delete_issue(hass, DOMAIN, ISSUE_ID_REAUTH)
+def _delete_reauth_issue(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Delete this entry's reauth issue if it exists."""
+    ir.async_delete_issue(hass, DOMAIN, reauth_issue_id(entry.entry_id))
+    # Issues from before the id carried the entry id; harmless if absent.
+    ir.async_delete_issue(hass, DOMAIN, "reauth_required")
 
 
 # ----------------------------------------------------------------------
@@ -81,7 +81,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise ConfigEntryAuthFailed("Missing credentials")
 
     # Credentials are present; ensure any old issue is cleared
-    _delete_reauth_issue(hass)
+    _delete_reauth_issue(hass, entry)
 
     api = TellinkAPI(username, password)
 

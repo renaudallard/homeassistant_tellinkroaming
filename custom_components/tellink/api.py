@@ -58,6 +58,10 @@ class TellinkAPI:
 
     async def _login(self) -> dict:
         """Open the socket, send the credentials and wait for the session."""
+        # The portal refuses a login by closing the socket rather than by
+        # sending an error frame, so the same close means different things
+        # before and after the credentials go out.
+        sent_credentials = False
         try:
             async with websockets.connect(
                 self.URL,
@@ -84,6 +88,7 @@ class TellinkAPI:
                     "password": self.password,
                 }
                 await ws.send(json.dumps(cred))
+                sent_credentials = True
                 _LOGGER.debug("[%s] Sent credentials payload", self.username)
 
                 # Wait for SessionCli
@@ -105,9 +110,13 @@ class TellinkAPI:
                         return parsed
 
         except (ConnectionClosedError, WebSocketException, OSError) as err:
+            if sent_credentials:
+                raise TellinkAuthError(
+                    f"Portal closed the session after the credentials: {err}"
+                ) from err
             raise TellinkConnectionError(str(err) or type(err).__name__) from err
 
-        # Connected and sent the credentials, but the portal never sent a session.
+        # Stayed connected but never sent a session.
         raise TellinkAuthError("No session returned; the credentials were refused")
 
     def _parse_session_cli(self, data: dict) -> dict:

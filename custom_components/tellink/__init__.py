@@ -120,8 +120,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         update_interval=scan_interval,
     )
 
-    # Registered before the first refresh, which can abort setup: an entry that
-    # fails to come up must still pick up new intervals from the options flow.
+    # Reload when the user changes the intervals in the options flow. Home
+    # Assistant drops the listener again if setup goes on to fail, so an entry
+    # that never came up will not react to an options change; the setup retry
+    # picks the new values up instead.
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     # Raises ConfigEntryAuthFailed, ConfigEntryError or ConfigEntryNotReady itself;

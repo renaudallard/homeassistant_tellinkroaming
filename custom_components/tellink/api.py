@@ -9,7 +9,7 @@ import ssl
 from datetime import datetime
 
 import websockets
-from websockets.exceptions import ConnectionClosedError, WebSocketException
+from websockets.exceptions import ConnectionClosedOK, WebSocketException
 
 SSL_CONTEXT = ssl.create_default_context()
 
@@ -119,11 +119,19 @@ class TellinkAPI:
                             raise TellinkError("Could not parse the SessionCli payload")
                         return parsed
 
-        except (ConnectionClosedError, WebSocketException, OSError) as err:
+        except ConnectionClosedOK as err:
+            # A clean close is how the portal refuses a login. Before the
+            # credentials went out it can only be the portal hanging up.
             if sent_credentials:
                 raise TellinkAuthError(
                     f"Portal closed the session after the credentials: {err}"
                 ) from err
+            raise TellinkConnectionError(str(err) or type(err).__name__) from err
+        except (WebSocketException, OSError) as err:
+            # An abnormal close, a reset or a socket error is a network problem
+            # wherever in the exchange it lands. Calling one of those a refused
+            # login would blame the password and stop the coordinator for good,
+            # because Home Assistant does not reschedule after an auth failure.
             raise TellinkConnectionError(str(err) or type(err).__name__) from err
 
         # Stayed connected but never sent a session.

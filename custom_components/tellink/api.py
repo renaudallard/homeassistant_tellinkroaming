@@ -9,7 +9,7 @@ import ssl
 from datetime import datetime
 
 import websockets
-from websockets.exceptions import ConnectionClosedOK, WebSocketException
+from websockets.exceptions import WebSocketException
 
 SSL_CONTEXT = ssl.create_default_context()
 
@@ -64,10 +64,6 @@ class TellinkAPI:
 
     async def _login(self) -> dict:
         """Open the socket, send the credentials and wait for the session."""
-        # The portal refuses a login by closing the socket rather than by
-        # sending an error frame, so the same close means different things
-        # before and after the credentials go out.
-        sent_credentials = False
         try:
             async with websockets.connect(
                 self.URL,
@@ -95,7 +91,6 @@ class TellinkAPI:
                     "password": self.password,
                 }
                 await ws.send(json.dumps(cred))
-                sent_credentials = True
                 _LOGGER.debug("[%s] Sent credentials payload", self.username)
 
                 # Wait for SessionCli
@@ -113,29 +108,29 @@ class TellinkAPI:
                     if not isinstance(data, dict):
                         continue
 
-                    if data.get("tag") == "SessionCli":
+                    tag = data.get("tag")
+
+                    if tag == "SessionCli":
                         parsed = self._parse_session_cli(data)
                         if not parsed:
                             raise TellinkError("Could not parse the SessionCli payload")
                         return parsed
 
-        except ConnectionClosedOK as err:
-            # A clean close is how the portal refuses a login. Before the
-            # credentials went out it can only be the portal hanging up.
-            if sent_credentials:
-                raise TellinkAuthError(
-                    f"Portal closed the session after the credentials: {err}"
-                ) from err
-            raise TellinkConnectionError(str(err) or type(err).__name__) from err
+                    if tag == "Challenge":
+                        # A second challenge is how the portal says no. Its own
+                        # web client shows "Invalid credentials" when a
+                        # challenge arrives after the login was submitted.
+                        raise TellinkAuthError("The portal refused the credentials")
+
         except (WebSocketException, OSError) as err:
-            # An abnormal close, a reset or a socket error is a network problem
-            # wherever in the exchange it lands. Calling one of those a refused
-            # login would blame the password and stop the coordinator for good,
-            # because Home Assistant does not reschedule after an auth failure.
+            # Every close, reset and socket error is a network problem. Calling
+            # one of them a refused login would blame the password and stop the
+            # coordinator for good, since Home Assistant does not reschedule
+            # after an auth failure. The portal states a refusal explicitly.
             raise TellinkConnectionError(str(err) or type(err).__name__) from err
 
-        # Stayed connected but never sent a session.
-        raise TellinkAuthError("No session returned; the credentials were refused")
+        # Neither a session nor a refusal inside the frame budget.
+        raise TellinkConnectionError("No session returned within the frame budget")
 
     def _parse_session_cli(self, data: dict) -> dict:
         """Extract balance, status, username, and expiry info."""

@@ -1,0 +1,19 @@
+name: Validate with hassfest
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *"
+  # Callable, so the release gates on this check itself rather than on a copy
+  # of it that drifts out of step.
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  validate:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v7"
+      - uses: "home-assistant/actions/hassfest@master"

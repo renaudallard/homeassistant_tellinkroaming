@@ -1,19 +1,19 @@
 {
   "domain": "tellink",
   "name": "Tellink Prepaid",
-  "version": "1.5.1",
-  "documentation": "https://github.com/renaudallard/homeassistant_tellinkroaming",
-  "issue_tracker": "https://github.com/renaudallard/homeassistant_tellinkroaming/issues",
-  "requirements": [
-    "websockets>=12.0"
-  ],
   "codeowners": [
     "@renaudallard"
   ],
+  "config_flow": true,
+  "documentation": "https://github.com/renaudallard/homeassistant_tellinkroaming",
   "integration_type": "hub",
   "iot_class": "cloud_polling",
-  "config_flow": true,
+  "issue_tracker": "https://github.com/renaudallard/homeassistant_tellinkroaming/issues",
   "loggers": [
     "custom_components.tellink"
-  ]
+  ],
+  "requirements": [
+    "websockets>=12.0"
+  ],
+  "version": "1.5.1"
 }

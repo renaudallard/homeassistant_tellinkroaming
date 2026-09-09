@@ -16,8 +16,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # There is no test suite here, so hassfest is the check that says the
+  # integration still loads. The release waits for it.
+  verify:
+    uses: ./.github/workflows/hassfest.yml
+
   release:
     runs-on: ubuntu-latest
+    needs: [verify]
     steps:
       - name: Checkout (full history)
         uses: actions/checkout@v7

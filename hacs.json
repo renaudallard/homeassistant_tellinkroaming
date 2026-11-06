@@ -1,5 +1,7 @@
 {
   "name": "Tellink Prepaid",
   "render_readme": true,
-  "homeassistant": "2025.10.0"
+  "homeassistant": "2025.10.0",
+  "zip_release": true,
+  "filename": "tellink.zip"
 }

@@ -49,8 +49,8 @@ Or manually:
 
 ### Manual
 
-1. Download the latest release from the [releases page](https://github.com/renaudallard/homeassistant_tellinkroaming/releases)
-2. Extract into `<config>/custom_components/tellink/`
+1. Download `tellink.zip` from the latest release on the [releases page](https://github.com/renaudallard/homeassistant_tellinkroaming/releases)
+2. Extract it into `<config>/custom_components/tellink/`
 3. Restart Home Assistant
 4. Add the integration from the UI
 

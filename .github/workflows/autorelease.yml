@@ -97,20 +97,21 @@ jobs:
           git tag "$TAG"
           git push origin "$TAG"
 
-      - name: Build integration ZIP (HACS-friendly)
+      - name: Build integration ZIP
         id: package
         if: steps.changed.outputs.changed == 'true'
         run: |
           set -e
-          VER="${{ steps.versions.outputs.new }}"
           mkdir -p dist
-          # Package with repo-root layout so HACS/manual users can drop it in
-          zip -r "dist/tellink-${VER}.zip" custom_components/ hacs.json README.md LICENSE 2>/dev/null || \
-          zip -r "dist/tellink-${VER}.zip" custom_components/ hacs.json README.md 2>/dev/null || \
-          zip -r "dist/tellink-${VER}.zip" custom_components/ hacs.json 2>/dev/null || \
-          zip -r "dist/tellink-${VER}.zip" custom_components/
-          echo "asset=dist/tellink-${VER}.zip" >> "$GITHUB_OUTPUT"
-          echo "Built asset: dist/tellink-${VER}.zip"
+          # The files of the integration at the root of the zip: hacs.json
+          # names it, and HACS and the Marketplace extract it into
+          # custom_components/tellink/
+          cd custom_components/tellink
+          zip -qr ../../dist/tellink.zip . \
+            -x '*.pyc' '__pycache__/*' '*/__pycache__/*'
+          cd ../..
+          unzip -l dist/tellink.zip
+          echo "asset=dist/tellink.zip" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         if: steps.changed.outputs.changed == 'true'

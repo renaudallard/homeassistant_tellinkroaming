@@ -8,7 +8,7 @@
   <a href="https://hacs.xyz/"><img src="https://img.shields.io/badge/HACS-Custom-blue.svg" alt="HACS" /></a>
   <a href="https://github.com/renaudallard/homeassistant_tellinkroaming/actions/workflows/validate.yml"><img src="https://github.com/renaudallard/homeassistant_tellinkroaming/actions/workflows/validate.yml/badge.svg" alt="Validate" /></a>
   <a href="https://github.com/renaudallard/homeassistant_tellinkroaming/actions/workflows/hassfest.yml"><img src="https://github.com/renaudallard/homeassistant_tellinkroaming/actions/workflows/hassfest.yml/badge.svg" alt="hassfest" /></a>
-  <a href="https://github.com/renaudallard/homeassistant_tellinkroaming"><img src="https://img.shields.io/badge/version-1.5.1-blue.svg" alt="version" /></a>
+  <a href="https://github.com/renaudallard/homeassistant_tellinkroaming"><img src="https://img.shields.io/badge/version-1.5.2-blue.svg" alt="version" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/renaudallard/homeassistant_tellinkroaming" alt="license" /></a>
   <a href="https://github.com/renaudallard/homeassistant_tellinkroaming/issues"><img src="https://img.shields.io/github/issues/renaudallard/homeassistant_tellinkroaming.svg" alt="issues" /></a>
   <a href="https://github.com/renaudallard/homeassistant_tellinkroaming/stargazers"><img src="https://img.shields.io/github/stars/renaudallard/homeassistant_tellinkroaming.svg" alt="stars" /></a>
